@@ -59,7 +59,7 @@ jobs:
       HOMEBREW_TAP_PAT: ${{ secrets.HOMEBREW_TAP_PAT }}
       TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-    if: ${{ env.HOMEBREW_TAP_PAT != '' }}
+    if: ${{ secrets.HOMEBREW_TAP_PAT != '' }}
     steps:
       - name: Download packaged binary
         uses: actions/download-artifact@v4
