@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { buildCommand } from '../commands/build.js';
+import { MockXcodeBuild } from '../exec/mock-xcodebuild.js';
 
 const program = new Command();
 
@@ -23,8 +25,18 @@ program
   .option('--profile <name>', 'Use named profile')
   .option('--platform <type>', 'Platform: ios-sim, ios-device, macos')
   .option('--clean', 'Clean before building')
-  .action(() => {
-    console.log('build command - coming soon');
+  .option('--no-quirk', 'Disable quirky progress messages')
+  .action(async (options) => {
+    // Use mock exec wrapper for now
+    const execWrapper = new MockXcodeBuild();
+    
+    await buildCommand({
+      profile: options.profile,
+      platform: options.platform,
+      clean: options.clean,
+      noQuirk: options.noQuirk,
+      execWrapper,
+    });
   });
 
 program

@@ -1,2 +1,3 @@
-// Command exports will be added here as features are implemented
-export {};
+// Command exports
+export { buildCommand } from './build.js';
+export type { BuildCommandOptions } from './build.js';

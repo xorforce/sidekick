@@ -9,92 +9,78 @@ import { describe, it, expect } from 'vitest';
 
 describe('Build Command - Golden Tests', () => {
   describe('CLI Output - Success States', () => {
-    it('should show success message on successful build', async () => {
-      // This test will be updated when build command is implemented
-      // For now, it documents the expected output format
-      const expectedOutput = expect.stringContaining('✅ Build succeeded');
-      
-      // When implemented, this will run:
+    it.todo('should show success message on successful build', async () => {
+      // This test will be implemented when build command is ready
+      // Expected: sidekick build should output "✅ Build succeeded"
       // const { stdout } = await execa('node', [cliPath, 'build', '--workspace', 'Test.xcworkspace', '--scheme', 'TestScheme']);
-      // expect(stdout).toMatch(expectedOutput);
+      // expect(stdout).toMatch(/✅ Build succeeded/);
     });
 
-    it('should show log file paths after build', async () => {
-      const expectedOutput = expect.stringMatching(/Logs saved to:.*\.log/);
-      // Will verify log paths are displayed
+    it.todo('should show log file paths after build', async () => {
+      // Will verify log paths are displayed after successful build
     });
 
-    it('should show progress spinner during build', async () => {
+    it.todo('should show progress spinner during build', async () => {
       // Will verify spinner appears with quirky message
-      const expectedOutput = expect.stringMatching(/Building.*🍪|☕|🍕/);
     });
   });
 
   describe('CLI Output - Error States', () => {
-    it('should show concise error summary on build failure', async () => {
+    it.todo('should show concise error summary on build failure', async () => {
       // Expected format: brief error list from xcpretty
-      const expectedOutput = expect.stringContaining('❌ Build failed');
-      const expectedErrors = expect.arrayContaining([
-        expect.stringMatching(/error:/),
-      ]);
     });
 
-    it('should show link to full log file on error', async () => {
-      const expectedOutput = expect.stringMatching(/See full log:.*\.log/);
+    it.todo('should show link to full log file on error', async () => {
+      // Should display path to saved log file
     });
 
-    it('should handle missing workspace gracefully', async () => {
-      const expectedOutput = expect.stringContaining('Workspace not found');
+    it.todo('should handle missing workspace gracefully', async () => {
+      // Should show clear error message
     });
 
-    it('should handle missing scheme gracefully', async () => {
-      const expectedOutput = expect.stringContaining('Scheme not found');
+    it.todo('should handle missing scheme gracefully', async () => {
+      // Should show clear error message
     });
   });
 
   describe('CLI Output - Progress States', () => {
-    it('should show build progress with quirky spinner', async () => {
+    it.todo('should show build progress with quirky spinner', async () => {
       // Verify spinner text includes quirky elements (toggleable with --no-quirk)
-      const expectedOutput = expect.stringMatching(/Building.*[🍪☕🍕]/);
     });
 
-    it('should respect --no-quirk flag', async () => {
+    it.todo('should respect --no-quirk flag', async () => {
       // Verify no emoji/quirk when flag is set
-      const expectedOutput = expect.not.stringMatching(/[🍪☕🍕]/);
     });
   });
 
   describe('CLI Arguments', () => {
-    it('should accept --profile flag', async () => {
+    it.todo('should accept --profile flag', async () => {
       // Will test: sidekick build --profile staging
-      // Should load profile config and use its values
     });
 
-    it('should accept --platform flag', async () => {
+    it.todo('should accept --platform flag', async () => {
       // Will test: sidekick build --platform ios-sim
-      // Should build for iOS simulator
     });
 
-    it('should accept --clean flag', async () => {
+    it.todo('should accept --clean flag', async () => {
       // Will test: sidekick build --clean
-      // Should clean before building
     });
 
-    it('should combine multiple flags', async () => {
+    it.todo('should combine multiple flags', async () => {
       // Will test: sidekick build --profile prod --platform macos --clean
     });
   });
 
   describe('Log File Saving', () => {
-    it('should always save raw xcodebuild log', async () => {
+    it.todo('should always save raw xcodebuild log', async () => {
       // Verify raw log file exists after build
     });
 
-    it('should always save xcpretty formatted log', async () => {
+    it.todo('should always save xcpretty formatted log', async () => {
       // Verify pretty log file exists after build
     });
 
-    it('should create timestamped log directories', async () => {
+    it.todo('should create timestamped log directories', async () => {
       // Verify logs are organized in timestamped folders
     });
   });
