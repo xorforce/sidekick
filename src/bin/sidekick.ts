@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { buildCommand } from '../commands/build.js';
+import { XcodeBuildImpl } from '../exec/xcodebuild-impl.js';
 import { MockXcodeBuild } from '../exec/mock-xcodebuild.js';
 
 const program = new Command();
@@ -23,15 +24,26 @@ program
   .command('build')
   .description('Build for simulator, device, or macOS')
   .option('--profile <name>', 'Use named profile')
+  .option('--workspace <path>', 'Path to .xcworkspace file')
+  .option('--project <path>', 'Path to .xcodeproj file')
+  .option('--scheme <name>', 'Build scheme name')
+  .option('--configuration <name>', 'Build configuration (Debug/Release)')
   .option('--platform <type>', 'Platform: ios-sim, ios-device, macos')
   .option('--clean', 'Clean before building')
   .option('--no-quirk', 'Disable quirky progress messages')
+  .option('--mock', 'Use mock exec wrapper (for testing)')
   .action(async (options) => {
-    // Use mock exec wrapper for now
-    const execWrapper = new MockXcodeBuild();
+    // Use real exec wrapper by default, mock if --mock flag is set
+    const execWrapper = options.mock 
+      ? new MockXcodeBuild()
+      : new XcodeBuildImpl();
     
     await buildCommand({
       profile: options.profile,
+      workspace: options.workspace,
+      project: options.project,
+      scheme: options.scheme,
+      configuration: options.configuration,
       platform: options.platform,
       clean: options.clean,
       noQuirk: options.noQuirk,

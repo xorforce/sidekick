@@ -8,6 +8,10 @@ import type { ExecWrapper, XcodeBuildOptions } from '../exec/xcodebuild.js';
 
 export interface BuildCommandOptions {
   profile?: string;
+  workspace?: string;
+  project?: string;
+  scheme?: string;
+  configuration?: string;
   platform?: 'ios-sim' | 'ios-device' | 'macos';
   clean?: boolean;
   noQuirk?: boolean;
@@ -27,16 +31,25 @@ function getSpinnerMessage(step: number, noQuirk: boolean): string {
 }
 
 export async function buildCommand(options: BuildCommandOptions): Promise<void> {
-  const { execWrapper, platform, clean, noQuirk = false } = options;
+  const { 
+    execWrapper, 
+    workspace, 
+    project, 
+    scheme, 
+    configuration, 
+    platform, 
+    clean, 
+    noQuirk = false 
+  } = options;
   // profile will be used when profile loading is implemented
   // const { profile } = options;
 
   // Build options for exec wrapper
   const buildOptions: XcodeBuildOptions = {
-    // TODO: Load from config/profile
-    workspace: 'MyApp.xcworkspace', // Placeholder
-    scheme: 'MyApp', // Placeholder
-    configuration: 'Debug', // Placeholder
+    workspace,
+    project,
+    scheme: scheme || 'clavis', // Default scheme if not provided
+    configuration: configuration || 'Debug', // Default to Debug
     platform,
     clean,
     derivedDataPath: undefined, // TODO: Load from profile
