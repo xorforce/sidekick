@@ -41,7 +41,10 @@ jobs:
     name: Update Homebrew tap
     runs-on: macos-latest
     needs: build-and-release
-    if: ${{ secrets.HOMEBREW_TAP_PAT != '' }}
+    env:
+      HOMEBREW_TAP_PAT: ${{ secrets.HOMEBREW_TAP_PAT }}
+      TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+    if: ${{ env.HOMEBREW_TAP_PAT != '' }}
     steps:
       - name: Download packaged binary
         uses: actions/download-artifact@v4
@@ -53,11 +56,9 @@ jobs:
         run: echo "sha=$(shasum -a 256 sidekick-cli-${{ github.ref_name }}-macos.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Clone tap repo
-        env:
-          TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
         run: |
           REPO="${TAP_REPO:-xorforce/homebrew-tap}"
-          git clone https://${{ secrets.HOMEBREW_TAP_PAT }}@github.com/${REPO} tap
+          git clone https://${HOMEBREW_TAP_PAT}@github.com/${REPO} tap
 
       - name: Update formula
         env:
