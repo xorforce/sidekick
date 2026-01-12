@@ -1,0 +1,95 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-release:
+    name: Build binary and attach to GitHub release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (release)
+        run: swift build -c release
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          cp .build/apple/Products/Release/sidekick dist/sidekick
+          tar -czvf sidekick-cli-${{ github.ref_name }}-macos.tar.gz -C dist sidekick
+
+      - name: Upload artifact (for downstream jobs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidekick-cli-macos-tar
+          path: sidekick-cli-${{ github.ref_name }}-macos.tar.gz
+          retention-days: 7
+
+      - name: Attach to GitHub release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: sidekick-cli-${{ github.ref_name }}-macos.tar.gz
+
+  homebrew:
+    name: Update Homebrew tap
+    runs-on: macos-latest
+    needs: build-and-release
+    if: ${{ secrets.HOMEBREW_TAP_PAT != '' }}
+    steps:
+      - name: Download packaged binary
+        uses: actions/download-artifact@v4
+        with:
+          name: sidekick-cli-macos-tar
+
+      - name: Compute SHA256
+        id: sha
+        run: echo "sha=$(shasum -a 256 sidekick-cli-${{ github.ref_name }}-macos.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Clone tap repo
+        env:
+          TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+        run: |
+          REPO="${TAP_REPO:-xorforce/homebrew-tap}"
+          git clone https://${{ secrets.HOMEBREW_TAP_PAT }}@github.com/${REPO} tap
+
+      - name: Update formula
+        env:
+          SHA256: ${{ steps.sha.outputs.sha }}
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          REPO=${GITHUB_REPOSITORY}
+          URL="https://github.com/${REPO}/releases/download/${GITHUB_REF_NAME}/sidekick-cli-${GITHUB_REF_NAME}-macos.tar.gz"
+
+          cat > tap/Formula/sidekick.rb <<'EOF'
+          class Sidekick < Formula
+            desc "A quirky CLI for building, running, and testing iOS/macOS apps"
+            homepage "https://github.com/${REPO}"
+            url "${URL}"
+            sha256 "${SHA256}"
+            version "${VERSION}"
+            license "MIT"
+
+            def install
+              bin.install "sidekick"
+            end
+
+            test do
+              system "#{bin}/sidekick", "--version"
+            end
+          end
+          EOF
+
+      - name: Commit and push to tap
+        working-directory: tap
+        run: |
+          git config user.name "sidekick-bot"
+          git config user.email "bot@example.com"
+          git add Formula/sidekick.rb
+          git commit -m "Update sidekick to ${GITHUB_REF_NAME} (ci)"
+          git push origin HEAD
