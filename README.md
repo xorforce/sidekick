@@ -1,35 +1,49 @@
 # Sidekick
 
-A quirky CLI for building, running, and testing iOS/macOS apps.
+A minimal Swift CLI for building, running, and testing iOS/macOS apps.
+
+## Quick start
+
+```bash
+# Install deps and build
+swift build
+
+# CLI help
+swift run sidekick --help
+```
+
+## Commands (concise)
+
+- `sidekick init [--path <dir>] [--non-interactive]` — detect .xcworkspace/.xcodeproj, choose scheme/config/platform, save defaults to `.sidekick/config.json`.
+- `sidekick build [--workspace|--project] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean]` — build using flags or saved defaults; logs saved under `.sidekick/logs/`.
+
+## Common flows
+
+```bash
+# Onboard a project interactively (from project root)
+swift run sidekick init
+
+# Onboard from elsewhere
+swift run sidekick init --path /path/to/MyApp
+
+# Build using saved defaults
+swift run sidekick build
+
+# Override saved defaults
+swift run sidekick build --scheme MyApp --configuration Release --platform ios-sim --clean
+```
 
 ## Development
 
 ```bash
-# Build the Swift package
-swift build
-
-# Run the CLI (shows help)
-swift run sidekick --help
-
-# Run tests (none yet, but wired up)
-swift test
+swift build          # compile
+swift run sidekick   # run CLI
+swift test           # tests (placeholder)
 ```
 
-## Usage
+## Docs
 
-```bash
-# Build for iOS Simulator
-swift run sidekick build --workspace MyApp.xcworkspace --scheme MyApp --platform ios-sim
-
-# Build for iOS device
-swift run sidekick build --project MyApp.xcodeproj --scheme MyApp --platform ios-device
-
-# Build for macOS
-swift run sidekick build --project MyMacApp.xcodeproj --scheme MyMacApp --platform macos
-
-# Clean then build a Release config
-swift run sidekick build --workspace MyApp.xcworkspace --scheme MyApp --configuration Release --clean
-```
+See `docs/` for per-command guides and best practices.
 
 ## License
 
