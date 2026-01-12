@@ -5,14 +5,24 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and release (e.g., v0.1.0)"
+        required: true
+        type: string
 
 jobs:
   build-and-release:
     name: Build binary and attach to GitHub release
     runs-on: macos-latest
+    env:
+      RELEASE_REF: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REF }}
 
       - name: Build (release)
         run: swift build -c release
@@ -21,13 +31,13 @@ jobs:
         run: |
           mkdir -p dist
           cp .build/apple/Products/Release/sidekick dist/sidekick
-          tar -czvf sidekick-cli-${{ github.ref_name }}-macos.tar.gz -C dist sidekick
+          tar -czvf sidekick-cli-${{ env.RELEASE_NAME }}-macos.tar.gz -C dist sidekick
 
       - name: Upload artifact (for downstream jobs)
         uses: actions/upload-artifact@v4
         with:
           name: sidekick-cli-macos-tar
-          path: sidekick-cli-${{ github.ref_name }}-macos.tar.gz
+          path: sidekick-cli-${{ env.RELEASE_NAME }}-macos.tar.gz
           retention-days: 7
 
       - name: Attach to GitHub release
@@ -35,8 +45,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tag_name: ${{ env.RELEASE_NAME }}
+          name: ${{ env.RELEASE_NAME }}
           generate_release_notes: true
-          files: sidekick-cli-${{ github.ref_name }}-macos.tar.gz
+          files: sidekick-cli-${{ env.RELEASE_NAME }}-macos.tar.gz
 
   homebrew:
     name: Update Homebrew tap
@@ -45,6 +57,7 @@ jobs:
     env:
       HOMEBREW_TAP_PAT: ${{ secrets.HOMEBREW_TAP_PAT }}
       TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+      RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     if: ${{ env.HOMEBREW_TAP_PAT != '' }}
     steps:
       - name: Download packaged binary
@@ -54,7 +67,7 @@ jobs:
 
       - name: Compute SHA256
         id: sha
-        run: echo "sha=$(shasum -a 256 sidekick-cli-${{ github.ref_name }}-macos.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+        run: echo "sha=$(shasum -a 256 sidekick-cli-${{ env.RELEASE_NAME }}-macos.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Clone tap repo
         run: |
@@ -67,7 +80,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           REPO=${GITHUB_REPOSITORY}
-          URL="https://github.com/${REPO}/releases/download/${GITHUB_REF_NAME}/sidekick-cli-${GITHUB_REF_NAME}-macos.tar.gz"
+          URL="https://github.com/${REPO}/releases/download/${RELEASE_NAME}/sidekick-cli-${RELEASE_NAME}-macos.tar.gz"
 
           cat > tap/Formula/sidekick.rb <<'EOF'
           class Sidekick < Formula
