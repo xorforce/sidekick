@@ -7,7 +7,7 @@ struct Sidekick: ParsableCommand {
     commandName: "sidekick",
     abstract: "A quirky CLI for building, running, and testing iOS/macOS apps",
     version: "0.1.0",
-    subcommands: [Build.self]
+    subcommands: [Build.self, Init.self]
   )
 }
 
@@ -39,13 +39,15 @@ extension Sidekick {
     var clean: Bool = false
 
     func run() throws {
+      let config = loadConfigIfAvailable()
+
       let options = BuildOptions(
         profile: profile,
-        workspace: workspace,
-        project: project,
-        scheme: scheme ?? "clavis",
-        configuration: configuration ?? "Debug",
-        platform: platform,
+        workspace: workspace ?? config?.workspace,
+        project: project ?? config?.project,
+        scheme: scheme ?? config?.scheme ?? "clavis",
+        configuration: configuration ?? config?.configuration ?? "Debug",
+        platform: platform ?? config?.platform,
         clean: clean
       )
 
@@ -96,7 +98,115 @@ extension Sidekick {
   }
 }
 
+extension Sidekick {
+  struct Init: ParsableCommand {
+    static let configuration = CommandConfiguration(
+      abstract: "Initialize sidekick defaults for this project"
+    )
+
+    @Option(name: .customLong("path"), help: "Project root to scan (defaults to current directory)")
+    var path: String?
+
+    @Flag(name: .customLong("non-interactive"), help: "Use first detected options without prompts")
+    var nonInteractive: Bool = false
+
+    func run() throws {
+      let root = URL(fileURLWithPath: path ?? FileManager.default.currentDirectoryPath)
+      let projects = detectProjects(in: root)
+
+      guard !projects.isEmpty else {
+        print("No .xcworkspace or .xcodeproj found under \(root.path).")
+        throw ExitCode(1)
+      }
+
+      let project = chooseProject(from: projects, nonInteractive: nonInteractive)
+      let schemes = listSchemes(for: project)
+      let configurations = listConfigurations(for: project)
+
+      let scheme: String
+      if schemes.isEmpty {
+        print("No schemes detected. Enter scheme name: ", terminator: "")
+        scheme = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if scheme.isEmpty {
+          print("Scheme is required.")
+          throw ExitCode(1)
+        }
+      } else {
+        scheme = chooseOption(
+          prompt: "Select scheme",
+          options: schemes,
+          nonInteractive: nonInteractive
+        ) ?? schemes.first!
+      }
+
+      let configuration = chooseOption(
+        prompt: "Select configuration",
+        options: configurations.isEmpty ? ["Debug", "Release"] : configurations,
+        nonInteractive: nonInteractive
+      ) ?? "Debug"
+
+      let platformOptions = Platform.allCases.map { $0.rawValue }
+      let platformRaw = chooseOption(
+        prompt: "Select platform",
+        options: platformOptions,
+        nonInteractive: nonInteractive
+      ) ?? Platform.iosSim.rawValue
+      let platform = Platform(rawValue: platformRaw)
+
+      let config = SidekickConfig(
+        workspace: project.workspacePath,
+        project: project.projectPath,
+        scheme: scheme,
+        configuration: configuration,
+        platform: platform
+      )
+
+      try saveConfig(config, root: root)
+      print("""
+Saved sidekick config:
+  Workspace: \(config.workspace ?? "-")
+  Project: \(config.project ?? "-")
+  Scheme: \(config.scheme ?? "-")
+  Configuration: \(config.configuration ?? "-")
+  Platform: \(config.platform?.rawValue ?? "-")
+  Path: \(configFilePath(root: root).path)
+""")
+    }
+  }
+}
+
 // MARK: - Build plumbing
+
+private struct SidekickConfig: Codable {
+  var workspace: String?
+  var project: String?
+  var scheme: String?
+  var configuration: String?
+  var platform: Platform?
+  var derivedDataPath: String?
+}
+
+private struct ProjectEntry {
+  enum Kind {
+    case workspace
+    case project
+  }
+
+  let url: URL
+  let kind: Kind
+
+  var displayName: String {
+    url.lastPathComponent
+  }
+
+  var workspacePath: String? {
+    kind == .workspace ? url.path : nil
+  }
+
+  var projectPath: String? {
+    kind == .project ? url.path : nil
+  }
+}
 
 private struct BuildOptions {
   let profile: String?
@@ -151,6 +261,178 @@ private enum BuildError: Error {
       return errors
     }
   }
+}
+
+// MARK: - Init helpers
+
+private func configFilePath(root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)) -> URL {
+  return root.appendingPathComponent(".sidekick/config.json")
+}
+
+private func loadConfigIfAvailable(root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)) -> SidekickConfig? {
+  let path = configFilePath(root: root)
+  guard FileManager.default.fileExists(atPath: path.path) else {
+    return nil
+  }
+
+  do {
+    let data = try Data(contentsOf: path)
+    return try JSONDecoder().decode(SidekickConfig.self, from: data)
+  } catch {
+    print("Warning: failed to load config at \(path.path): \(error)")
+    return nil
+  }
+}
+
+private func saveConfig(_ config: SidekickConfig, root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)) throws {
+  let path = configFilePath(root: root)
+  try FileManager.default.createDirectory(
+    at: path.deletingLastPathComponent(),
+    withIntermediateDirectories: true
+  )
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+  let data = try encoder.encode(config)
+  try data.write(to: path, options: .atomic)
+}
+
+private func detectProjects(in root: URL) -> [ProjectEntry] {
+  guard let enumerator = FileManager.default.enumerator(
+    at: root,
+    includingPropertiesForKeys: [.isRegularFileKey],
+    options: [.skipsHiddenFiles]
+  ) else {
+    return []
+  }
+
+  var results: [ProjectEntry] = []
+  for case let url as URL in enumerator {
+    let depth = url.pathComponents.count - root.pathComponents.count
+    if depth > 3 {
+      enumerator.skipDescendants()
+      continue
+    }
+
+    switch url.pathExtension {
+    case "xcworkspace":
+      results.append(ProjectEntry(url: url, kind: .workspace))
+    case "xcodeproj":
+      results.append(ProjectEntry(url: url, kind: .project))
+    default:
+      break
+    }
+  }
+
+  return results.sorted { lhs, rhs in
+    if lhs.kind != rhs.kind {
+      return lhs.kind == .workspace
+    }
+    return lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
+  }
+}
+
+private func chooseProject(from entries: [ProjectEntry], nonInteractive: Bool) -> ProjectEntry {
+  guard entries.count > 1, !nonInteractive else {
+    return entries.first!
+  }
+
+  print("Select workspace/project:")
+  for (index, entry) in entries.enumerated() {
+    print("  [\(index + 1)] \(entry.displayName)")
+  }
+  print("Enter choice (1-\(entries.count)) [1]: ", terminator: "")
+  if let input = readLine(),
+     let choice = Int(input.trimmingCharacters(in: .whitespaces)),
+     choice >= 1, choice <= entries.count {
+    return entries[choice - 1]
+  }
+
+  return entries.first!
+}
+
+private func chooseOption(prompt: String, options: [String], nonInteractive: Bool) -> String? {
+  guard !options.isEmpty else { return nil }
+  guard options.count > 1, !nonInteractive else {
+    return options.first
+  }
+
+  print("\(prompt):")
+  for (index, option) in options.enumerated() {
+    print("  [\(index + 1)] \(option)")
+  }
+  print("Enter choice (1-\(options.count)) [1]: ", terminator: "")
+  if let input = readLine(),
+     let choice = Int(input.trimmingCharacters(in: .whitespaces)),
+     choice >= 1, choice <= options.count {
+    return options[choice - 1]
+  }
+
+  return options.first
+}
+
+private func listSchemes(for entry: ProjectEntry) -> [String] {
+  let args: [String]
+  switch entry.kind {
+  case .workspace:
+    args = ["-list", "-workspace", entry.url.path]
+  case .project:
+    args = ["-list", "-project", entry.url.path]
+  }
+
+  return parseListSection(command: "/usr/bin/xcodebuild", arguments: args, section: "Schemes")
+}
+
+private func listConfigurations(for entry: ProjectEntry) -> [String] {
+  let args: [String]
+  switch entry.kind {
+  case .workspace:
+    args = ["-list", "-workspace", entry.url.path]
+  case .project:
+    args = ["-list", "-project", entry.url.path]
+  }
+
+  return parseListSection(command: "/usr/bin/xcodebuild", arguments: args, section: "Build Configurations")
+}
+
+private func parseListSection(command: String, arguments: [String], section: String) -> [String] {
+  let process = Process()
+  process.executableURL = URL(fileURLWithPath: command)
+  process.arguments = arguments
+  let pipe = Pipe()
+  process.standardOutput = pipe
+  process.standardError = Pipe()
+
+  do {
+    try process.run()
+  } catch {
+    return []
+  }
+
+  process.waitUntilExit()
+  guard process.terminationStatus == 0 else {
+    return []
+  }
+
+  let data = pipe.fileHandleForReading.readDataToEndOfFile()
+  guard let output = String(data: data, encoding: .utf8) else {
+    return []
+  }
+
+  var values: [String] = []
+  var inSection = false
+  for line in output.split(separator: "\n") {
+    let trimmed = line.trimmingCharacters(in: .whitespaces)
+    if trimmed.isEmpty { continue }
+    if trimmed.hasPrefix(section + ":") {
+      inSection = true
+      continue
+    }
+    if inSection {
+      if trimmed.hasSuffix(":") { break }
+      values.append(trimmed)
+    }
+  }
+  return values
 }
 
 private func runXcodebuild(options: BuildOptions) throws -> BuildResult {
@@ -507,7 +789,7 @@ private func resolveXcprettyPath() -> String? {
 
 // MARK: - Platform
 
-enum Platform: String, ExpressibleByArgument {
+enum Platform: String, ExpressibleByArgument, CaseIterable, Codable {
   case iosSim = "ios-sim"
   case iosDevice = "ios-device"
   case macos = "macos"
