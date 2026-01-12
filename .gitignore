@@ -39,3 +39,8 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Swift / SPM
+.build/
+.swiftpm/
+Package.resolved

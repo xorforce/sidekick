@@ -2,57 +2,33 @@
 
 A quirky CLI for building, running, and testing iOS/macOS apps.
 
-## Installation
-
-```bash
-npm install
-```
-
 ## Development
 
 ```bash
-# Run in development mode
-npm run dev
+# Build the Swift package
+swift build
 
-# Build
-npm run build
+# Run the CLI (shows help)
+swift run sidekick --help
 
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
+# Run tests (none yet, but wired up)
+swift test
 ```
 
 ## Usage
 
 ```bash
-# Interactive setup
-sidekick init
+# Build for iOS Simulator
+swift run sidekick build --workspace MyApp.xcworkspace --scheme MyApp --platform ios-sim
 
-# Build
-sidekick build
+# Build for iOS device
+swift run sidekick build --project MyApp.xcodeproj --scheme MyApp --platform ios-device
 
-# Run
-sidekick run
+# Build for macOS
+swift run sidekick build --project MyMacApp.xcodeproj --scheme MyMacApp --platform macos
 
-# Test
-sidekick test
-
-# Show context
-sidekick context
-
-# Manage profiles
-sidekick profile
-
-# View logs
-sidekick logs
-
-# Stop app
-sidekick stop
-
-# Simulator helpers
-sidekick sim
+# Clean then build a Release config
+swift run sidekick build --workspace MyApp.xcworkspace --scheme MyApp --configuration Release --clean
 ```
 
 ## License
