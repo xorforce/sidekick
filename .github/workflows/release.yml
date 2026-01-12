@@ -93,9 +93,11 @@ jobs:
         run: echo "sha=$(shasum -a 256 sidekick-cli-${{ env.RELEASE_TAG }}-macos.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Clone tap repo
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
         run: |
           REPO="${TAP_REPO:-xorforce/homebrew-tap}"
-          git clone https://${HOMEBREW_TAP_PAT}@github.com/${REPO} tap
+          git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/${REPO} tap
 
       - name: Update formula
         env:
@@ -126,11 +128,11 @@ jobs:
 
       - name: Commit and push to tap
         working-directory: tap
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
         run: |
           git config user.name "sidekick-bot"
           git config user.email "bot@example.com"
-          REPO="${TAP_REPO:-xorforce/homebrew-tap}"
-          git remote set-url origin https://${HOMEBREW_TAP_PAT}@github.com/${REPO}
           git add Formula/sidekick.rb
-          git commit -m "Update sidekick to ${GITHUB_REF_NAME} (ci)"
-          git push origin HEAD
+          git diff --staged --quiet || git commit -m "Update sidekick to ${GITHUB_REF_NAME} (ci)"
+          git push
