@@ -24,13 +24,17 @@ jobs:
         with:
           ref: ${{ env.RELEASE_REF }}
 
+      - name: Get build path
+        id: build_path
+        run: echo "path=$(swift build -c release --show-bin-path)" >> $GITHUB_OUTPUT
+
       - name: Build (release)
         run: swift build -c release
 
       - name: Package binary
         run: |
           mkdir -p dist
-          cp .build/apple/Products/Release/sidekick dist/sidekick
+          cp ${{ steps.build_path.outputs.path }}/sidekick dist/sidekick
           tar -czvf sidekick-cli-${{ env.RELEASE_TAG }}-macos.tar.gz -C dist sidekick
 
       - name: Upload artifact (for downstream jobs)
