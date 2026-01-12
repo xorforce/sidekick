@@ -15,6 +15,8 @@ jobs:
   build-and-release:
     name: Build binary and attach to GitHub release
     runs-on: macos-latest
+    permissions:
+      contents: write
     env:
       RELEASE_REF: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
