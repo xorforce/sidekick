@@ -1,36 +1,42 @@
-# Sidekick
+# Sidekick 🦿
 
 A minimal Swift CLI for building, running, and testing iOS/macOS apps.
+
+## Install
+
+```bash
+brew tap xorforce/tap
+brew install xorforce/tap/sidekick
+```
 
 ## Quick start
 
 ```bash
-# Install deps and build
-swift build
-
-# CLI help
-swift run sidekick --help
+# See CLI help
+sidekick --help
 ```
 
-## Commands (concise)
+## Commands
 
-- `sidekick init [--path <dir>] [--non-interactive]` — detect .xcworkspace/.xcodeproj, choose scheme/config/platform, save defaults to `.sidekick/config.json`.
-- `sidekick build [--workspace|--project] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean]` — build using flags or saved defaults; logs saved under `.sidekick/logs/`.
+- `sidekick init [--path <dir>] [--non-interactive]`
+  - Scans for `.xcworkspace` / `.xcodeproj`, selects scheme/config/platform, saves defaults to `.sidekick/config.json`.
+- `sidekick build [--workspace <path>|--project <path>] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean]`
+  - Builds using flags or saved defaults; logs go to `.sidekick/logs/` (pretty if `xcpretty` is available).
 
 ## Common flows
 
 ```bash
 # Onboard a project interactively (from project root)
-swift run sidekick init
+sidekick init
 
 # Onboard from elsewhere
-swift run sidekick init --path /path/to/MyApp
+sidekick init --path /path/to/MyApp
 
 # Build using saved defaults
-swift run sidekick build
+sidekick build
 
 # Override saved defaults
-swift run sidekick build --scheme MyApp --configuration Release --platform ios-sim --clean
+sidekick build --scheme MyApp --configuration Release --platform ios-sim --clean
 ```
 
 ## Development
