@@ -129,6 +129,8 @@ jobs:
         run: |
           git config user.name "sidekick-bot"
           git config user.email "bot@example.com"
+          REPO="${TAP_REPO:-xorforce/homebrew-tap}"
+          git remote set-url origin https://${HOMEBREW_TAP_PAT}@github.com/${REPO}
           git add Formula/sidekick.rb
           git commit -m "Update sidekick to ${GITHUB_REF_NAME} (ci)"
           git push origin HEAD
