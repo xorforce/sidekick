@@ -19,7 +19,10 @@ let package = Package(
       dependencies: [
         .product(name: "ArgumentParser", package: "swift-argument-parser")
       ],
-      path: "Sources/SidekickCLI"
+      path: "Sources/SidekickCLI",
+      swiftSettings: [
+        .unsafeFlags(["-parse-as-library"])
+      ]
     )
   ]
 )
