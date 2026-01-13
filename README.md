@@ -19,9 +19,13 @@ sidekick --help
 ## Commands
 
 - `sidekick init [--path <dir>] [--non-interactive]`
-  - Scans for `.xcworkspace` / `.xcodeproj`, selects scheme/config/platform, saves defaults to `.sidekick/config.json`.
+  - Scans for `.xcworkspace` / `.xcodeproj`, selects scheme/config/platform, optionally selects a default simulator/device, saves defaults to `.sidekick/config.json`.
 - `sidekick build [--workspace <path>|--project <path>] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean]`
   - Builds using flags or saved defaults; logs go to `.sidekick/logs/` (pretty if `xcpretty` is available).
+- `sidekick sim`
+  - Lists available simulators (via `xcrun simctl list`).
+- `sidekick devices`
+  - Lists physical devices known to Xcode (via `xcrun xcdevice list`).
 
 ## Common flows
 
