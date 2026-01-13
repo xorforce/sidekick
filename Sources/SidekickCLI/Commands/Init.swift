@@ -15,7 +15,9 @@ extension Sidekick {
 
     func run() throws {
       let root = URL(fileURLWithPath: path ?? FileManager.default.currentDirectoryPath)
-      let projects = detectProjects(in: root)
+      let projects = withSpinner(message: "Detecting projects") {
+        detectProjects(in: root)
+      }
 
       guard !projects.isEmpty else {
         print("No .xcworkspace or .xcodeproj found under \(root.path).")
@@ -23,8 +25,12 @@ extension Sidekick {
       }
 
       let project = chooseProject(from: projects, nonInteractive: nonInteractive)
-      let schemes = listSchemes(for: project)
-      let configurations = listConfigurations(for: project)
+      let schemes = withSpinner(message: "Listing schemes") {
+        listSchemes(for: project)
+      }
+      let configurations = withSpinner(message: "Listing configurations") {
+        listConfigurations(for: project)
+      }
 
       let scheme = try chooseScheme(schemes: schemes, nonInteractive: nonInteractive)
       let configuration = chooseOption(
@@ -101,9 +107,36 @@ private func chooseScheme(schemes: [String], nonInteractive: Bool) throws -> Str
   return chooseOption(prompt: "Select scheme", options: schemes, nonInteractive: nonInteractive) ?? schemes.first!
 }
 
+private func formatRuntimeForDisplay(_ runtimeKey: String) -> String {
+  var s = runtimeKey
+  s = s.replacingOccurrences(of: "com.apple.CoreSimulator.SimRuntime.", with: "")
+  
+  if s.hasPrefix("iOS-") {
+    return "iOS \(String(s.dropFirst(4)).replacingOccurrences(of: "-", with: "."))"
+  } else if s.hasPrefix("tvOS-") {
+    return "tvOS \(String(s.dropFirst(5)).replacingOccurrences(of: "-", with: "."))"
+  } else if s.hasPrefix("watchOS-") {
+    return "watchOS \(String(s.dropFirst(8)).replacingOccurrences(of: "-", with: "."))"
+  } else if s.hasPrefix("visionOS-") {
+    return "visionOS \(String(s.dropFirst(9)).replacingOccurrences(of: "-", with: "."))"
+  } else if s.hasPrefix("macOS-") {
+    return "macOS \(String(s.dropFirst(6)).replacingOccurrences(of: "-", with: "."))"
+  }
+  
+  var fallback = s
+  fallback = fallback.replacingOccurrences(of: "iOS-", with: "iOS ")
+  fallback = fallback.replacingOccurrences(of: "tvOS-", with: "tvOS ")
+  fallback = fallback.replacingOccurrences(of: "watchOS-", with: "watchOS ")
+  fallback = fallback.replacingOccurrences(of: "visionOS-", with: "visionOS ")
+  fallback = fallback.replacingOccurrences(of: "-", with: ".")
+  return fallback
+}
+
 private func applyDefaultSimulator(to config: inout SidekickConfig, nonInteractive: Bool) {
   do {
-    let groups = try fetchSimulators()
+    let groups = try withSpinner(message: "Fetching simulators") {
+      try fetchSimulators()
+    }
     let flattened = groups.flatMap { group in
       group.devices.map { device in
         (group.runtime, device)
@@ -116,12 +149,15 @@ private func applyDefaultSimulator(to config: inout SidekickConfig, nonInteracti
     }
 
     let options = flattened.map { (runtime, device) in
-      let state = device.state ?? "unknown"
-      return "\(device.name) — \(runtime) — \(state) — \(device.udid)"
+      let runtimeDisplay = formatRuntimeForDisplay(runtime)
+      return "\(device.name) - \(runtimeDisplay)"
     }
 
     if let chosen = chooseOption(prompt: "Select default simulator (used for run/test)", options: options, nonInteractive: nonInteractive, allowSkip: true) {
-      if let match = flattened.first(where: { "\($0.1.name) — \($0.0) — \($0.1.state ?? "unknown") — \($0.1.udid)" == chosen }) {
+      if let match = flattened.first(where: { (runtime, device) in
+        let runtimeDisplay = formatRuntimeForDisplay(runtime)
+        return "\(device.name) - \(runtimeDisplay)" == chosen
+      }) {
         config.simulatorName = match.1.name
         config.simulatorUDID = match.1.udid
       }
@@ -133,45 +169,72 @@ private func applyDefaultSimulator(to config: inout SidekickConfig, nonInteracti
 
 private func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInteractive: Bool) {
   do {
-    let devices = try fetchConnectedPhysicalDevices()
-    guard !devices.isEmpty else {
-      print("No connected devices detected; skipping default device.")
+    let devices = try withSpinner(message: "Fetching devices") {
+      try fetchConnectedPhysicalDevices()
+    }
+    
+    // Always fetch simulators for fallback
+    let groups = try withSpinner(message: "Fetching simulators") {
+      try fetchSimulators()
+    }
+    let simulators = groups.flatMap { group in
+      group.devices.map { device in (group.runtime, device) }
+    }
+    
+    // If devices are available, let user select one
+    if !devices.isEmpty {
+      let deviceOptions = devices.map { formatDeviceDisplay($0) }
+      
+      if let chosen = chooseOption(
+        prompt: "Select default device (used for run/test)",
+        options: deviceOptions,
+        nonInteractive: nonInteractive,
+        allowSkip: true
+      ) {
+        if let match = devices.first(where: { formatDeviceDisplay($0) == chosen }) {
+          if let id = match.identifier, !id.isEmpty {
+            config.deviceName = match.name
+            config.deviceUDID = id
+          }
+        }
+      }
+    } else {
+      print("No connected devices detected.")
+    }
+    
+    // Always ask for a fallback simulator (even if device was selected)
+    guard !simulators.isEmpty else {
+      if devices.isEmpty {
+        print("No simulators available either; skipping default device/simulator.")
+      }
       return
     }
-
-    let options = devices.map { device in
-      let name = device.name ?? "Unknown"
-      let platform = device.platform ?? "unknown"
-      let os = device.osVersion ?? "unknown"
-      let id = device.identifier ?? ""
-      return "\(name) — \(platform) \(os) — \(id)"
+    
+    let simulatorOptions = simulators.map { (runtime, device) in
+      let runtimeDisplay = formatRuntimeForDisplay(runtime)
+      return "\(device.name) - \(runtimeDisplay)"
     }
-
-    guard let chosen = chooseOption(
-      prompt: "Select default device (used for run/test)",
-      options: options,
+    
+    let simulatorPrompt = devices.isEmpty
+      ? "Select default simulator (used for run/test)"
+      : "Select fallback simulator (used when device is not connected)"
+    
+    if let chosen = chooseOption(
+      prompt: simulatorPrompt,
+      options: simulatorOptions,
       nonInteractive: nonInteractive,
-      allowSkip: true
-    ) else {
-      return
-    }
-
-    guard let match = devices.first(where: { device in
-      let name = device.name ?? "Unknown"
-      let platform = device.platform ?? "unknown"
-      let os = device.osVersion ?? "unknown"
-      let id = device.identifier ?? ""
-      return "\(name) — \(platform) \(os) — \(id)" == chosen
-    }) else {
-      return
-    }
-
-    if let id = match.identifier, !id.isEmpty {
-      config.deviceName = match.name
-      config.deviceUDID = id
+      allowSkip: !devices.isEmpty  // Only allow skip if device was selected
+    ) {
+      if let match = simulators.first(where: { (runtime, device) in
+        let runtimeDisplay = formatRuntimeForDisplay(runtime)
+        return "\(device.name) - \(runtimeDisplay)" == chosen
+      }) {
+        config.simulatorName = match.1.name
+        config.simulatorUDID = match.1.udid
+      }
     }
   } catch {
-    print("Warning: failed to list devices (\(error)); skipping default device.")
+    print("Warning: failed to list devices/simulators (\(error)); skipping default device/simulator.")
   }
 }
 
@@ -229,16 +292,14 @@ private func detectProjects(in root: URL) -> [ProjectEntry] {
 private func chooseProject(from entries: [ProjectEntry], nonInteractive: Bool) -> ProjectEntry {
   guard entries.count > 1, !nonInteractive else { return entries.first! }
 
-  print("Select workspace/project:")
-  for (index, entry) in entries.enumerated() {
-    print("  [\(index + 1)] \(entry.displayName)")
-  }
-  print("Enter choice (1-\(entries.count)) [1]: ", terminator: "")
-
-  if let input = readLine(),
-     let choice = Int(input.trimmingCharacters(in: .whitespaces)),
-     choice >= 1, choice <= entries.count {
-    return entries[choice - 1]
+  let options = entries.map { $0.displayName }
+  if let selected = InteractiveSelection.select(
+    prompt: "Select workspace/project",
+    options: options
+  ) {
+    if let index = options.firstIndex(of: selected) {
+      return entries[index]
+    }
   }
 
   return entries.first!
@@ -253,28 +314,11 @@ private func chooseOption(
   guard !options.isEmpty else { return nil }
   guard options.count > 1, !nonInteractive else { return options.first }
 
-  print("\(prompt):")
-  if allowSkip {
-    print("  [0] Skip")
-  }
-  for (index, option) in options.enumerated() {
-    print("  [\(index + 1)] \(option)")
-  }
-
-  let rangeLabel = allowSkip ? "0-\(options.count)" : "1-\(options.count)"
-  print("Enter choice (\(rangeLabel)) [1]: ", terminator: "")
-
-  if let input = readLine() {
-    let trimmed = input.trimmingCharacters(in: .whitespaces)
-    if allowSkip, trimmed == "0" {
-      return nil
-    }
-    if let choice = Int(trimmed), choice >= 1, choice <= options.count {
-      return options[choice - 1]
-    }
-  }
-
-  return options.first
+  return InteractiveSelection.select(
+    prompt: prompt,
+    options: options,
+    allowSkip: allowSkip
+  )
 }
 
 private func listSchemes(for entry: ProjectEntry) -> [String] {
@@ -326,15 +370,64 @@ private func parseListSection(command: String, arguments: [String], section: Str
   for line in output.split(separator: "\n") {
     let trimmed = line.trimmingCharacters(in: .whitespaces)
     if trimmed.isEmpty { continue }
+    
+    // Check if this is the section we're looking for
     if trimmed.hasPrefix(section + ":") {
       inSection = true
       continue
     }
+    
+    // If we're in the section, collect values
     if inSection {
-      if trimmed.hasSuffix(":") { break }
-      values.append(trimmed)
+      // Stop if we hit another section header (line ending with ":")
+      if trimmed.hasSuffix(":") && trimmed != section + ":" {
+        break
+      }
+      // Only add non-empty lines that aren't section headers
+      if !trimmed.hasSuffix(":") {
+        values.append(trimmed)
+      }
     }
   }
   return values
 }
 
+
+private func formatDeviceDisplay(_ device: PhysicalDevice) -> String {
+  let name = device.name ?? "Unknown"
+  let platform = formatPlatform(device.platform ?? "unknown")
+  let osVersion = formatOSVersion(device.osVersion ?? "unknown")
+  let id = device.identifier ?? "-"
+  
+  // Format: "Name - Platform Version - ID" or "Name - Platform - ID" if no version
+  if osVersion.isEmpty {
+    return "\(name) - \(platform) - \(id)"
+  } else {
+    return "\(name) - \(platform) \(osVersion) - \(id)"
+  }
+}
+
+private func formatPlatform(_ platform: String) -> String {
+  if platform.contains("iphoneos") || platform.contains("iphone") {
+    return "iOS"
+  } else if platform.contains("ipados") || platform.contains("ipad") {
+    return "iPadOS"
+  } else if platform.contains("macos") || platform.contains("mac") {
+    return "macOS"
+  } else if platform.contains("watchos") || platform.contains("watch") {
+    return "watchOS"
+  } else if platform.contains("tvos") || platform.contains("tv") {
+    return "tvOS"
+  } else if platform.contains("visionos") || platform.contains("vision") {
+    return "visionOS"
+  }
+  return platform
+}
+
+private func formatOSVersion(_ osVersion: String) -> String {
+  // Return the actual OS version, or empty string if unknown
+  if osVersion == "unknown" || osVersion.isEmpty {
+    return ""
+  }
+  return osVersion
+}

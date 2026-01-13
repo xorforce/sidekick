@@ -38,21 +38,52 @@ extension Sidekick {
         scheme: scheme ?? config?.scheme ?? "clavis",
         configuration: configuration ?? config?.configuration ?? "Debug",
         platform: platform ?? config?.platform,
-        clean: clean
+        clean: clean,
+        config: config
       )
 
       let logPaths = try createLogPaths()
 
       do {
-        let result = try runXcodebuild(options: options)
+        // Determine which destination will be used
+        let destination = determineBuildDestination(options: options)
+        if let dest = destination {
+          let destType = dest.type == "device" ? "device" : "simulator"
+          print("Building for \(destType): \(dest.name) (\(dest.id))")
+        }
+        
+        // Only show spinner if xcpretty is not available (raw output mode)
+        let hasXcpretty = resolveXcprettyPath() != nil
+        let result: BuildResult
+        if hasXcpretty {
+          // Streaming output, no spinner
+          result = try runXcodebuild(options: options)
+        } else {
+          // Raw output, show spinner
+          result = try withSpinner(message: "Building") {
+            try runXcodebuild(options: options)
+          }
+        }
         print("✅ Build succeeded")
+        
+        // Add destination info to logs
+        var logHeader = "Build completed successfully\n"
+        logHeader += "Scheme: \(options.scheme)\n"
+        logHeader += "Configuration: \(options.configuration)\n"
+        if let dest = destination {
+          logHeader += "Target: \(dest.type) - \(dest.name) (\(dest.id))\n"
+        } else if let platform = options.platform {
+          logHeader += "Platform: \(platform.rawValue)\n"
+        }
+        logHeader += "\n"
 
-        let rawLog = result.stdout + result.stderr
+        let rawLog = logHeader + result.stdout + result.stderr
         try rawLog.write(to: logPaths.rawLogURL, atomically: true, encoding: .utf8)
 
         let prettyLog = runXcprettyIfAvailable(rawLog: rawLog)
-        let prettyToSave = prettyLog ?? rawLog
-        try prettyToSave.write(to: logPaths.prettyLogURL, atomically: true, encoding: .utf8)
+        let prettyToSave = (prettyLog ?? rawLog)
+        let prettyWithHeader = logHeader + prettyToSave
+        try prettyWithHeader.write(to: logPaths.prettyLogURL, atomically: true, encoding: .utf8)
 
         print("\nLogs saved to:")
         print("  Raw: \(logPaths.rawLogURL.path)")
@@ -65,8 +96,24 @@ extension Sidekick {
         print("❌ Build failed")
 
         if let buildError = error as? BuildError {
-          try? buildError.rawLog?.write(to: logPaths.rawLogURL, atomically: true, encoding: .utf8)
-          try? buildError.prettyLog?.write(to: logPaths.prettyLogURL, atomically: true, encoding: .utf8)
+          // Add destination info to error logs
+          let buildDestination = determineBuildDestination(options: options)
+          var logHeader = "Build failed\n"
+          logHeader += "Scheme: \(options.scheme)\n"
+          logHeader += "Configuration: \(options.configuration)\n"
+          if let dest = buildDestination {
+            logHeader += "Target: \(dest.type) - \(dest.name) (\(dest.id))\n"
+          } else if let platform = options.platform {
+            logHeader += "Platform: \(platform.rawValue)\n"
+          }
+          logHeader += "\n"
+          
+          if let rawLog = buildError.rawLog {
+            try? (logHeader + rawLog).write(to: logPaths.rawLogURL, atomically: true, encoding: .utf8)
+          }
+          if let prettyLog = buildError.prettyLog {
+            try? (logHeader + prettyLog).write(to: logPaths.prettyLogURL, atomically: true, encoding: .utf8)
+          }
 
           if !buildError.errors.isEmpty {
             print("\nErrors:")
@@ -94,6 +141,7 @@ private struct BuildOptions {
   let configuration: String
   let platform: Platform?
   let clean: Bool
+  let config: SidekickConfig?
 }
 
 private struct BuildResult {
@@ -281,6 +329,63 @@ private func unhookPipe(_ pipe: Pipe) {
   pipe.fileHandleForReading.readabilityHandler = nil
 }
 
+private struct BuildDestination {
+  let type: String // "device" or "simulator"
+  let name: String
+  let id: String
+  let destinationArg: String
+}
+
+private func determineBuildDestination(options: BuildOptions) -> BuildDestination? {
+  guard options.platform == .iosDevice || options.platform == .iosSim else {
+    return nil
+  }
+  
+  // For iOS device platform, try device first, then simulator
+  if options.platform == .iosDevice {
+    // Check if device is available and configured
+    if let deviceUDID = options.config?.deviceUDID, !deviceUDID.isEmpty,
+       let deviceName = options.config?.deviceName {
+      // Verify device is still connected
+      if let devices = try? fetchConnectedPhysicalDevices(),
+         devices.contains(where: { $0.identifier == deviceUDID }) {
+        return BuildDestination(
+          type: "device",
+          name: deviceName,
+          id: deviceUDID,
+          destinationArg: "id=\(deviceUDID)"
+        )
+      }
+    }
+    
+    // Fall back to simulator if device not available
+    if let simulatorUDID = options.config?.simulatorUDID, !simulatorUDID.isEmpty,
+       let simulatorName = options.config?.simulatorName {
+      return BuildDestination(
+        type: "simulator",
+        name: simulatorName,
+        id: simulatorUDID,
+        destinationArg: "id=\(simulatorUDID)"
+      )
+    }
+  }
+  
+  // For iOS simulator platform, use simulator if configured
+  if options.platform == .iosSim {
+    if let simulatorUDID = options.config?.simulatorUDID, !simulatorUDID.isEmpty,
+       let simulatorName = options.config?.simulatorName {
+      return BuildDestination(
+        type: "simulator",
+        name: simulatorName,
+        id: simulatorUDID,
+        destinationArg: "id=\(simulatorUDID)"
+      )
+    }
+  }
+  
+  return nil
+}
+
 private func buildArguments(options: BuildOptions) -> [String] {
   var args: [String] = []
 
@@ -293,13 +398,30 @@ private func buildArguments(options: BuildOptions) -> [String] {
   args.append(contentsOf: ["-scheme", options.scheme])
   args.append(contentsOf: ["-configuration", options.configuration])
 
+  let destination = determineBuildDestination(options: options)
+  
   switch options.platform {
   case .iosSim:
     args.append(contentsOf: ["-sdk", "iphonesimulator"])
-    args.append(contentsOf: ["-destination", "generic/platform=iOS Simulator"])
+    if let dest = destination {
+      args.append(contentsOf: ["-destination", "platform=iOS Simulator,\(dest.destinationArg)"])
+    } else {
+      args.append(contentsOf: ["-destination", "generic/platform=iOS Simulator"])
+    }
   case .iosDevice:
-    args.append(contentsOf: ["-sdk", "iphoneos"])
-    args.append(contentsOf: ["-destination", "generic/platform=iOS"])
+    if let dest = destination {
+      if dest.type == "device" {
+        args.append(contentsOf: ["-sdk", "iphoneos"])
+        args.append(contentsOf: ["-destination", "platform=iOS,\(dest.destinationArg)"])
+      } else {
+        // Fallback to simulator - switch SDK
+        args.append(contentsOf: ["-sdk", "iphonesimulator"])
+        args.append(contentsOf: ["-destination", "platform=iOS Simulator,\(dest.destinationArg)"])
+      }
+    } else {
+      args.append(contentsOf: ["-sdk", "iphoneos"])
+      args.append(contentsOf: ["-destination", "generic/platform=iOS"])
+    }
   case .macos:
     args.append(contentsOf: ["-sdk", "macosx"])
     args.append(contentsOf: ["-destination", "platform=macOS"])
