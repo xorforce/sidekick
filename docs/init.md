@@ -25,7 +25,8 @@ sidekick init --non-interactive
 1) Scans up to 3 levels deep for `.xcworkspace` and `.xcodeproj` (prefers workspaces).  
 2) Lists schemes and build configurations via `xcodebuild -list`.  
 3) Prompts (or auto-selects) scheme, configuration, and platform (`ios-sim`, `ios-device`, `macos`).  
-4) Writes `.sidekick/config.json` in the target directory with the chosen defaults.
+4) Lists available test plans via `xcodebuild -showTestPlans` (if any) and lets you pick one (or `None`).  
+5) Writes `.sidekick/config.json` in the target directory with the chosen defaults.
 
 ## Best practices
 
