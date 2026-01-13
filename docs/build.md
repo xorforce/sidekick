@@ -31,7 +31,7 @@ sidekick build --configuration Release --clean
 ## Behavior
 
 - Loads defaults from `.sidekick/config.json` in the current directory, then applies CLI flags as overrides.
-- Resolves `xcpretty` via `xcrun --find` and common paths; streams pretty output when available, otherwise prints raw `xcodebuild` output.
+- Resolves `xcpretty` via `xcrun --find` and common paths; saves a pretty log when available (printed output remains `xcodebuild` output).
 - Saves logs to `.sidekick/logs/build-<timestamp>/raw.log` and `pretty.log` (pretty falls back to raw if `xcpretty` is missing).
 - Extracts error lines (`error:`) to surface failure reasons.
 
