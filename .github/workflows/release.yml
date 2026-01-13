@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
-      TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+      TAP_REPO: ${{ github.repository }}
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     needs: [build-and-release, check-homebrew-secret]
     if: ${{ needs.check-homebrew-secret.outputs.secret_available == 'true' }}
