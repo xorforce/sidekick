@@ -75,7 +75,7 @@ jobs:
 
   homebrew:
     name: Update Homebrew tap
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
       TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
