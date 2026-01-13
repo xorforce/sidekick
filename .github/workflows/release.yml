@@ -104,7 +104,7 @@ jobs:
           REPO=${TAP_REPO}
           URL="https://github.com/${REPO}/releases/download/${RELEASE_TAG}/sidekick-cli-${RELEASE_TAG}-macos.tar.gz"
 
-          cat > tap/Formula/sidekick.rb <<'EOF'
+          cat > tap/Formula/sidekick.rb <<EOF
           class Sidekick < Formula
             desc "A quirky CLI for building, running, and testing iOS/macOS apps"
             homepage "https://github.com/${REPO}"
