@@ -22,6 +22,8 @@ sidekick --help
   - Scans for `.xcworkspace` / `.xcodeproj`, selects scheme/config/platform, optionally selects a default simulator/device, saves defaults to `.sidekick/config.json`.
 - `sidekick build [--workspace <path>|--project <path>] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean]`
   - Builds using flags or saved defaults; logs go to `.sidekick/logs/` (pretty if `xcpretty` is available).
+- `sidekick run [--path <dir>] [--workspace <path>|--project <path>] [--scheme <name>] [--configuration <cfg>] [--clean] [--simulator]`
+  - Builds, installs, and launches on **USB-connected** device if configured + connected; otherwise uses configured simulator; otherwise picks any available iPhone simulator.
 - `sidekick sim`
   - Lists available simulators (via `xcrun simctl list`).
 - `sidekick devices`
@@ -39,8 +41,17 @@ sidekick setup --path /path/to/MyApp
 # Build using saved defaults
 sidekick build
 
+# Build + run using saved defaults
+sidekick run
+
 # Override saved defaults
 sidekick build --scheme MyApp --configuration Release --platform ios-sim --clean
+
+# Run for a project from elsewhere
+sidekick run --path /path/to/MyApp
+
+# Force simulator (skip device selection)
+sidekick run --simulator
 ```
 
 ## Development
