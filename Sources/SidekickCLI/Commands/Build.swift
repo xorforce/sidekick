@@ -347,8 +347,7 @@ private func determineBuildDestination(options: BuildOptions) -> BuildDestinatio
     if let deviceUDID = options.config?.deviceUDID, !deviceUDID.isEmpty,
        let deviceName = options.config?.deviceName {
       // Verify device is still connected
-      if let devices = try? fetchConnectedPhysicalDevices(),
-         devices.contains(where: { $0.identifier == deviceUDID }) {
+      if isDeviceConnectedViaUSB(udid: deviceUDID) {
         return BuildDestination(
           type: "device",
           name: deviceName,

@@ -84,6 +84,38 @@ struct PhysicalDevice: Codable, Hashable {
   let simulator: Bool?
 }
 
+// MARK: - devicectl parsing (preferred for detecting USB vs local network)
+
+private struct DevicectlListResponse: Codable {
+  let result: DevicectlListResult?
+}
+
+private struct DevicectlListResult: Codable {
+  let devices: [DevicectlDevice]?
+}
+
+private struct DevicectlDevice: Codable {
+  let connectionProperties: DevicectlConnectionProperties?
+  let deviceProperties: DevicectlDeviceProperties?
+  let hardwareProperties: DevicectlHardwareProperties?
+}
+
+private struct DevicectlConnectionProperties: Codable {
+  let transportType: String?
+  let tunnelState: String?
+}
+
+private struct DevicectlDeviceProperties: Codable {
+  let name: String?
+  let osVersionNumber: String?
+}
+
+private struct DevicectlHardwareProperties: Codable {
+  let platform: String?
+  let reality: String?
+  let udid: String?
+}
+
 func fetchPhysicalDevices() throws -> [PhysicalDevice] {
   let result = try runProcess(
     executable: "/usr/bin/xcrun",
@@ -116,3 +148,134 @@ func fetchConnectedPhysicalDevices() throws -> [PhysicalDevice] {
   try fetchPhysicalDevices().filter { $0.available ?? false }
 }
 
+func fetchUSBConnectedDevices() throws -> [PhysicalDevice] {
+  // Preferred: devicectl gives us transportType so we can ignore local-network pairing,
+  // and we can probe connectivity by querying lockState.
+  if let devices = try? fetchUSBConnectedDevicesFromDevicectl() {
+    return devices
+  }
+
+  // Fallback: best-effort heuristics from xcdevice output.
+  let devices = try fetchPhysicalDevices()
+  return devices.filter {
+    let iface = ($0.interface ?? "").lowercased()
+    let isUsb = iface == "usb"
+      || iface == "wired"
+      || iface == "wired-or-wireless"
+      || iface == "wired or wireless"
+    return ($0.available ?? false) && isUsb
+  }
+}
+
+private func fetchUSBConnectedDevicesFromDevicectl() throws -> [PhysicalDevice] {
+  let tmpURL = TempFileManager.shared.makeTempFileURL(
+    prefix: "sidekick-devicectl-devices",
+    fileExtension: "json"
+  )
+  defer { TempFileManager.shared.remove(tmpURL) }
+
+  let result = try runProcess(
+    executable: "/usr/bin/xcrun",
+    arguments: ["devicectl", "list", "devices", "--json-output", tmpURL.path]
+  )
+
+  guard result.exitCode == 0 else {
+    throw AppleToolingError.toolFailed(tool: "xcrun devicectl list devices", exitCode: result.exitCode, stderr: result.stderr)
+  }
+
+  let data = try Data(contentsOf: tmpURL)
+  let decoded = try JSONDecoder().decode(DevicectlListResponse.self, from: data)
+  let devices = decoded.result?.devices ?? []
+
+  // First filter: only physical, non-localNetwork devices.
+  let candidates: [PhysicalDevice] = devices.compactMap { device in
+    guard let udid = device.hardwareProperties?.udid else { return nil }
+
+    // Only consider physical devices
+    if let reality = device.hardwareProperties?.reality?.lowercased(), reality != "physical" {
+      return nil
+    }
+
+    // Ignore network devices for now (Wi-Fi pairing).
+    let transport = device.connectionProperties?.transportType?.lowercased()
+    if transport == "localnetwork" {
+      return nil
+    }
+
+    return PhysicalDevice(
+      name: device.deviceProperties?.name,
+      identifier: udid,
+      platform: device.hardwareProperties?.platform,
+      osVersion: device.deviceProperties?.osVersionNumber,
+      interface: device.connectionProperties?.transportType,
+      available: true,
+      simulator: false
+    )
+  }
+
+  // Second filter: probe connectivity (paired-but-not-connected devices can show up here).
+  return candidates.filter { candidate in
+    guard let udid = candidate.identifier else { return false }
+    return (try? probeDeviceLockState(udid: udid)) ?? false
+  }
+}
+
+private func probeDeviceLockState(udid: String) throws -> Bool {
+  let tmpURL = TempFileManager.shared.makeTempFileURL(
+    prefix: "sidekick-devicectl-lockstate",
+    fileExtension: "json"
+  )
+  defer { TempFileManager.shared.remove(tmpURL) }
+
+  let result = try runProcess(
+    executable: "/usr/bin/xcrun",
+    arguments: [
+      "devicectl", "device", "info", "lockState",
+      "--device", udid,
+      "--timeout", "5",
+      "--json-output", tmpURL.path
+    ]
+  )
+
+  // If devicectl can’t reach the device, it should fail non-zero.
+  return result.exitCode == 0
+}
+
+/// Check whether a particular UDID is *currently* connected via USB.
+/// - Returns: false for localNetwork devices, or if devicectl cannot reach it.
+func isDeviceConnectedViaUSB(udid: String) -> Bool {
+  // Ignore local network pairing.
+  if let transport = try? fetchDevicectlTransportType(udid: udid),
+     transport.lowercased() == "localnetwork" {
+    return false
+  }
+  return (try? probeDeviceLockState(udid: udid)) ?? false
+}
+
+private func fetchDevicectlTransportType(udid: String) throws -> String {
+  let tmpURL = TempFileManager.shared.makeTempFileURL(
+    prefix: "sidekick-devicectl-devices",
+    fileExtension: "json"
+  )
+  defer { TempFileManager.shared.remove(tmpURL) }
+
+  let result = try runProcess(
+    executable: "/usr/bin/xcrun",
+    arguments: ["devicectl", "list", "devices", "--timeout", "5", "--json-output", tmpURL.path]
+  )
+  guard result.exitCode == 0 else {
+    throw AppleToolingError.toolFailed(tool: "xcrun devicectl list devices", exitCode: result.exitCode, stderr: result.stderr)
+  }
+
+  let data = try Data(contentsOf: tmpURL)
+  let decoded = try JSONDecoder().decode(DevicectlListResponse.self, from: data)
+  let devices = decoded.result?.devices ?? []
+
+  for device in devices {
+    if device.hardwareProperties?.udid == udid {
+      return device.connectionProperties?.transportType ?? ""
+    }
+  }
+
+  return ""
+}
