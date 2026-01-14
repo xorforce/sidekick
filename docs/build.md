@@ -41,7 +41,7 @@ sidekick build --configuration Release --clean
 - Keep schemes shared so CI/local builds behave the same.
 - Set `--platform ios-sim` for simulator SDK; `ios-device` for connected device or generic destination; `macos` for macOS builds.
 - Use `--clean` only when needed; it slows builds by removing DerivedData.
-- Re-run `sidekick init` when project structure/schemes change so defaults stay current.
+- Re-run `sidekick setup` when project structure/schemes change so defaults stay current.
 
 ## Do / Don't
 

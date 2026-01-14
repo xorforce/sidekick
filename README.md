@@ -18,7 +18,7 @@ sidekick --help
 
 ## Commands
 
-- `sidekick init [--path <dir>] [--non-interactive]`
+- `sidekick setup [--path <dir>] [--non-interactive]`
   - Scans for `.xcworkspace` / `.xcodeproj`, selects scheme/config/platform, optionally selects a default simulator/device, saves defaults to `.sidekick/config.json`.
 - `sidekick build [--workspace <path>|--project <path>] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean]`
   - Builds using flags or saved defaults; logs go to `.sidekick/logs/` (pretty if `xcpretty` is available).
@@ -31,10 +31,10 @@ sidekick --help
 
 ```bash
 # Onboard a project interactively (from project root)
-sidekick init
+sidekick setup
 
 # Onboard from elsewhere
-sidekick init --path /path/to/MyApp
+sidekick setup --path /path/to/MyApp
 
 # Build using saved defaults
 sidekick build

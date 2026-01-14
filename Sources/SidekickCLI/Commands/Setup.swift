@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 
 extension Sidekick {
-  struct Init: ParsableCommand {
+  struct Setup: ParsableCommand {
     static let configuration = CommandConfiguration(
       abstract: "Initialize sidekick defaults for this project"
     )

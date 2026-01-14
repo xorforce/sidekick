@@ -1,4 +1,4 @@
-# sidekick init
+# sidekick setup
 
 Initialize Sidekick defaults for a project.
 
@@ -6,13 +6,13 @@ Initialize Sidekick defaults for a project.
 
 ```bash
 # From project root
-sidekick init
+sidekick setup
 
 # From elsewhere
-sidekick init --path /path/to/MyApp
+sidekick setup --path /path/to/MyApp
 
 # Skip prompts, pick first detected options
-sidekick init --non-interactive
+sidekick setup --non-interactive
 ```
 
 ## Flags
@@ -34,13 +34,13 @@ sidekick init --non-interactive
 - Run from the project root, or pass `--path` to avoid guessing.
 - Prefer `.xcworkspace` when using CocoaPods/SwiftPM aggregates; otherwise `.xcodeproj` is fine.
 - Keep scheme shared in Xcode so `xcodebuild -list` can see it.
-- After changes to schemes/configs, re-run `sidekick init` to refresh defaults.
+- After changes to schemes/configs, re-run `sidekick setup` to refresh defaults.
 
 ## Do / Don't
 
-- Do commit `.sidekick/config.json` only if it’s meant to be team-wide; otherwise, leave it local.
+- Do commit `.sidekick/config.json` only if it's meant to be team-wide; otherwise, leave it local.
 - Do verify `scheme` and `configuration` match CI expectations.
-- Don’t rely on `--non-interactive` if you have multiple similar schemes; pick explicitly.
+- Don't rely on `--non-interactive` if you have multiple similar schemes; pick explicitly.
 
 ## Troubleshooting
 
