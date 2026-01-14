@@ -44,3 +44,6 @@ temp/
 .build/
 .swiftpm/
 Package.resolved
+
+# Local dev artifacts
+devices.json
