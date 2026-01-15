@@ -58,6 +58,7 @@ extension Sidekick {
       } else {
         print("   ⚠️  No config file found, using defaults")
       }
+      try runHookIfNeeded(config: config, command: .run, phase: .pre)
 
       print("\n🔍 Determining run target...")
       let target = try determineRunTarget(config: config, forceSimulator: forceSimulator)
@@ -80,6 +81,7 @@ extension Sidekick {
       print("\n🚀 Starting deployment phase...")
       try installAndLaunch(appPath: appPath, target: target, config: config)
 
+      try runHookIfNeeded(config: config, command: .run, phase: .post)
       print("\n✅ Launch command completed (see output above for PID / errors).")
     }
 

@@ -16,10 +16,35 @@ brew install xorforce/tap/sidekick
 sidekick --help
 ```
 
+## Config
+
+Sidekick reads `.sidekick/config.json` from the current working directory. You can add pre/post hooks per command (build/run/archive) and a one-time setup job.
+
+```json
+{
+  "hooks": {
+    "build": {
+      "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] },
+      "post": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+    },
+    "run": {
+      "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+    }
+  },
+  "setupJob": {
+    "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+  }
+}
+```
+
+There is a sample script at `scripts/hook-echo.sh` that only echoes, useful for testing.
+
 ## Commands
 
-- `sidekick setup [--path <dir>] [--non-interactive] [--allow-provisioning-updates] [--archive-output <path>]`
+- `sidekick configure [--path <dir>] [--non-interactive] [--allow-provisioning-updates] [--archive-output <path>]`
   - Scans for `.xcworkspace` / `.xcodeproj`, selects scheme/config/platform, optionally selects a default simulator/device, saves defaults to `.sidekick/config.json`.
+- `sidekick setup [--path <dir>]`
+  - Runs the one-time setup job (if configured) and marks it complete.
 - `sidekick build [--workspace <path>|--project <path>] --scheme <name> [--configuration <cfg>] [--platform ios-sim|ios-device|macos] [--clean] [--allow-provisioning-updates] [--verbose]`
   - Builds using flags or saved defaults; logs go to `.sidekick/logs/` (pretty if `xcpretty` is available).
 - `sidekick archive [--path <dir>] [--workspace <path>|--project <path>] [--scheme <name>] [--configuration <cfg>] [--platform ios-device|macos] [--output <path>] [--derived-data <path>] [--clean] [--allow-provisioning-updates] [--verbose]`
@@ -34,11 +59,11 @@ sidekick --help
 ## Common flows
 
 ```bash
-# Onboard a project interactively (from project root)
-sidekick setup
+# Configure a project interactively (from project root)
+sidekick configure
 
-# Onboard from elsewhere
-sidekick setup --path /path/to/MyApp
+# Configure from elsewhere
+sidekick configure --path /path/to/MyApp
 
 # Build using saved defaults
 sidekick build

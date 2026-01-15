@@ -33,6 +33,7 @@ sidekick build --configuration Release --clean
 ## Behavior
 
 - Loads defaults from `.sidekick/config.json` in the current directory, then applies CLI flags as overrides.
+- Runs `hooks.build.pre` before the build and `hooks.build.post` after a successful build (if set).
 - Resolves `xcpretty` via `xcrun --find` and common paths; streams pretty output when available, otherwise prints raw `xcodebuild` output.
 - Saves logs to `.sidekick/logs/build-<timestamp>/raw.log` and `pretty.log` (pretty falls back to raw if `xcpretty` is missing).
 - Extracts error lines (`error:`) to surface failure reasons.
@@ -43,7 +44,7 @@ sidekick build --configuration Release --clean
 - Keep schemes shared so CI/local builds behave the same.
 - Set `--platform ios-sim` for simulator SDK; `ios-device` for connected device or generic destination; `macos` for macOS builds.
 - Use `--clean` only when needed; it slows builds by removing DerivedData.
-- Re-run `sidekick setup` when project structure/schemes change so defaults stay current.
+- Re-run `sidekick configure` when project structure/schemes change so defaults stay current.
 
 ## Do / Don't
 

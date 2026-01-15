@@ -63,6 +63,7 @@ extension Sidekick {
       } else {
         print("   ⚠️  No config file found, using defaults")
       }
+      try runHookIfNeeded(config: config, command: .archive, phase: .pre)
 
       let archiveScheme = scheme ?? config?.scheme ?? "clavis"
       let archiveConfig = configuration ?? config?.configuration ?? "Release"
@@ -131,6 +132,7 @@ extension Sidekick {
       }
 
       print("\n✅ Archive created at: \(archivePath)")
+      try runHookIfNeeded(config: config, command: .archive, phase: .post)
     }
   }
 }

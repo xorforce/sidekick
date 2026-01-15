@@ -36,10 +36,11 @@ sidekick archive --output ./MyApp.xcarchive
 ## Behavior
 
 - Loads defaults from `.sidekick/config.json` in the current directory, then applies CLI flags as overrides.
+- Runs `hooks.archive.pre` before archiving and `hooks.archive.post` after a successful archive (if set).
 - If `--output` is a directory, a timestamped `<scheme>-<timestamp>.xcarchive` is created inside it.
 - If `--output` ends in `.xcarchive`, that path is used directly.
 
 ## Troubleshooting
 
-- **Provisioning profile errors**: Re-run with `--allow-provisioning-updates` or set it via `sidekick setup`.
+- **Provisioning profile errors**: Re-run with `--allow-provisioning-updates` or set it via `sidekick configure`.
 - **Archive never finishes**: Re-run with `--verbose` to stream output and surface Xcode progress.

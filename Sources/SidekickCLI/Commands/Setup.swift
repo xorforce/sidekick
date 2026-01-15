@@ -2,9 +2,10 @@ import ArgumentParser
 import Foundation
 
 extension Sidekick {
-  struct Setup: ParsableCommand {
+  struct Configure: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Initialize sidekick defaults for this project"
+      commandName: "configure",
+      abstract: "Configure sidekick defaults for this project"
     )
 
     @Option(name: .customLong("path"), help: "Project root to scan (defaults to current directory)")
@@ -27,6 +28,7 @@ extension Sidekick {
 
     func run() throws {
       let root = URL(fileURLWithPath: path ?? FileManager.default.currentDirectoryPath)
+      let existingConfig = loadConfigIfAvailable(root: root)
       let projects = withSpinner(message: "Detecting projects") {
         detectProjects(in: root)
       }
@@ -66,7 +68,10 @@ extension Sidekick {
         configuration: configuration,
         platform: platform,
         allowProvisioningUpdates: allowProvisioningUpdates,
-        archiveOutputPath: archiveOutput
+        archiveOutputPath: archiveOutput,
+        hooks: existingConfig?.hooks,
+        setupJob: existingConfig?.setupJob,
+        setupJobCompleted: existingConfig?.setupJobCompleted ?? false
       )
 
       if platform == .iosSim {

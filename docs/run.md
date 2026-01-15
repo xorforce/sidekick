@@ -39,6 +39,10 @@ sidekick run --clean
   - Use the configured simulator (if present)
   - Else select any available iPhone simulator (prefers already-booted, then newest runtime)
 
+## Behavior
+
+- Runs `hooks.run.pre` before any build/install steps and `hooks.run.post` after a successful run (if set).
+
 ## What it does
 
 1) Builds via `xcodebuild` for the chosen destination.  
@@ -51,6 +55,6 @@ sidekick run --clean
 
 - **“Launch succeeded but I don’t see the app” (simulator)**: Sidekick attempts to open the Simulator app and select the UDID; if your Simulator app is closed/minimized, bring it to front and re-run.
 - **Provisioning failures on device**: Ensure your signing/provisioning profile includes the device UDID and that the scheme is configured for the selected team.
-- **Provisioning prompts or profile errors**: Re-run with `--allow-provisioning-updates` or set it via `sidekick setup`.
+- **Provisioning prompts or profile errors**: Re-run with `--allow-provisioning-updates` or set it via `sidekick configure`.
 - **Defaults not applied**: Config is loaded from the current working directory; use `--path` to point at the project root containing `.sidekick/config.json`.
 

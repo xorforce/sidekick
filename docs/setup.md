@@ -1,18 +1,18 @@
-# sidekick setup
+# sidekick configure
 
-Initialize Sidekick defaults for a project.
+Configure Sidekick defaults for a project.
 
 ## Quick usage
 
 ```bash
 # From project root
-sidekick setup
+sidekick configure
 
 # From elsewhere
-sidekick setup --path /path/to/MyApp
+sidekick configure --path /path/to/MyApp
 
 # Skip prompts, pick first detected options
-sidekick setup --non-interactive
+sidekick configure --non-interactive
 ```
 
 ## Flags
@@ -31,12 +31,45 @@ sidekick setup --non-interactive
 5) If platform is `ios-device`, optionally prompts for a **default device**, but only if a device is connected.  
 6) Writes `.sidekick/config.json` in the target directory with the chosen defaults (including archive output if provided).
 
+## Command hooks
+
+If `hooks.<command>.pre` or `hooks.<command>.post` are set in `.sidekick/config.json`, they run before/after that command (build/run/archive).
+
+## One-time setup job
+
+If `setupJob.pre` or `setupJob.post` is set in `.sidekick/config.json`, those commands run once when `sidekick setup` is invoked. After they run, `setupJobCompleted` is stored to prevent re-running.
+
+```json
+{
+  "hooks": {
+    "build": {
+      "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] },
+      "post": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+    }
+  },
+  "setupJob": {
+    "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] },
+    "post": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+  }
+}
+```
+
+## Run the setup job
+
+```bash
+# From project root
+sidekick setup
+
+# From elsewhere
+sidekick setup --path /path/to/MyApp
+```
+
 ## Best practices
 
 - Run from the project root, or pass `--path` to avoid guessing.
 - Prefer `.xcworkspace` when using CocoaPods/SwiftPM aggregates; otherwise `.xcodeproj` is fine.
 - Keep scheme shared in Xcode so `xcodebuild -list` can see it.
-- After changes to schemes/configs, re-run `sidekick setup` to refresh defaults.
+- After changes to schemes/configs, re-run `sidekick configure` to refresh defaults.
 
 ## Do / Don't
 

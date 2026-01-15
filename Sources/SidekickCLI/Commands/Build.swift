@@ -42,6 +42,7 @@ extension Sidekick {
 
     func run() throws {
       let config = loadConfigIfAvailable()
+      try runHookIfNeeded(config: config, command: .build, phase: .pre)
       let resolvedAllowProvisioning = allowProvisioningUpdates || (config?.allowProvisioningUpdates ?? false)
 
       let options = BuildOptions(
@@ -112,6 +113,8 @@ extension Sidekick {
         } else {
           print("  Pretty (fallback to raw): \(logPaths.prettyLogURL.path)")
         }
+
+        try runHookIfNeeded(config: config, command: .build, phase: .post)
       } catch {
         print("❌ Build failed")
 
