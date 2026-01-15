@@ -7,6 +7,8 @@ struct SidekickConfig: Codable {
   var configuration: String?
   var platform: Platform?
   var derivedDataPath: String?
+  var allowProvisioningUpdates: Bool = false
+  var archiveOutputPath: String?
 
   // Defaults for future run/test commands.
   var simulatorName: String?

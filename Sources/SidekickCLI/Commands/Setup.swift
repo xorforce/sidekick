@@ -13,6 +13,18 @@ extension Sidekick {
     @Flag(name: .customLong("non-interactive"), help: "Use first detected options without prompts")
     var nonInteractive: Bool = false
 
+    @Flag(
+      name: .customLong("allow-provisioning-updates"),
+      help: "Allow Xcode to update provisioning profiles automatically"
+    )
+    var allowProvisioningUpdates: Bool = false
+
+    @Option(
+      name: .customLong("archive-output"),
+      help: "Default archive directory or .xcarchive path"
+    )
+    var archiveOutput: String?
+
     func run() throws {
       let root = URL(fileURLWithPath: path ?? FileManager.default.currentDirectoryPath)
       let projects = withSpinner(message: "Detecting projects") {
@@ -52,7 +64,9 @@ extension Sidekick {
         project: project.projectPath,
         scheme: scheme,
         configuration: configuration,
-        platform: platform
+        platform: platform,
+        allowProvisioningUpdates: allowProvisioningUpdates,
+        archiveOutputPath: archiveOutput
       )
 
       if platform == .iosSim {
@@ -72,6 +86,8 @@ Saved sidekick config:
   Scheme: \(config.scheme ?? "-")
   Configuration: \(config.configuration ?? "-")
   Platform: \(config.platform?.rawValue ?? "-")
+  Provisioning updates: \(config.allowProvisioningUpdates ? "Enabled" : "Disabled")
+  Archive output: \(config.archiveOutputPath ?? "-")
   Default simulator: \(formatDefault(name: config.simulatorName, id: config.simulatorUDID))
   Default device: \(formatDefault(name: config.deviceName, id: config.deviceUDID))
   Path: \(configFilePath(root: root).path)
