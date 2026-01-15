@@ -28,8 +28,21 @@ extension Sidekick {
     @Flag(name: .customLong("clean"), help: "Clean before building")
     var clean: Bool = false
 
+    @Flag(
+      name: .customLong("allow-provisioning-updates"),
+      help: "Allow Xcode to update provisioning profiles automatically"
+    )
+    var allowProvisioningUpdates: Bool = false
+
+    @Flag(
+      name: .customLong("verbose"),
+      help: "Stream full xcodebuild output"
+    )
+    var verbose: Bool = false
+
     func run() throws {
       let config = loadConfigIfAvailable()
+      let resolvedAllowProvisioning = allowProvisioningUpdates || (config?.allowProvisioningUpdates ?? false)
 
       let options = BuildOptions(
         profile: profile,
@@ -39,6 +52,7 @@ extension Sidekick {
         configuration: configuration ?? config?.configuration ?? "Debug",
         platform: platform ?? config?.platform,
         clean: clean,
+        allowProvisioningUpdates: resolvedAllowProvisioning,
         config: config
       )
 
@@ -51,6 +65,9 @@ extension Sidekick {
           let destType = dest.type == "device" ? "device" : "simulator"
           print("Building for \(destType): \(dest.name) (\(dest.id))")
         }
+        if options.allowProvisioningUpdates {
+          print("Provisioning updates: Enabled")
+        }
         
         // Only show spinner if xcpretty is not available (raw output mode)
         let hasXcpretty = resolveXcprettyPath() != nil
@@ -58,6 +75,9 @@ extension Sidekick {
         if hasXcpretty {
           // Streaming output, no spinner
           result = try runXcodebuild(options: options)
+        } else if verbose {
+          print("🔎 Streaming xcodebuild output...")
+          result = try runXcodebuildStreamingRaw(options: options)
         } else {
           // Raw output, show spinner
           result = try withSpinner(message: "Building") {
@@ -141,6 +161,7 @@ private struct BuildOptions {
   let configuration: String
   let platform: Platform?
   let clean: Bool
+  let allowProvisioningUpdates: Bool
   let config: SidekickConfig?
 }
 
@@ -192,6 +213,18 @@ private func runXcodebuild(options: BuildOptions) throws -> BuildResult {
     return try runXcodebuildStreaming(options: options, xcprettyPath: xcprettyPath)
   }
   return try runXcodebuildRaw(options: options)
+}
+
+private func runXcodebuildStreamingRaw(options: BuildOptions) throws -> BuildResult {
+  let args = buildArguments(options: options)
+  let result = try runProcessStreaming(executable: "/usr/bin/xcodebuild", arguments: args)
+  if result.exitCode != 0 {
+    let rawLog = result.stdout + result.stderr
+    let errors = extractErrors(from: rawLog)
+    throw BuildError.failed(exitCode: result.exitCode, rawLog: rawLog, prettyLog: nil, errors: errors)
+  }
+
+  return BuildResult(exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr)
 }
 
 private func runXcodebuildRaw(options: BuildOptions) throws -> BuildResult {
@@ -430,6 +463,10 @@ private func buildArguments(options: BuildOptions) -> [String] {
 
   if options.clean {
     args.append("clean")
+  }
+
+  if options.allowProvisioningUpdates {
+    args.append("-allowProvisioningUpdates")
   }
 
   args.append("build")

@@ -28,6 +28,18 @@ extension Sidekick {
     @Flag(name: .customLong("simulator"), help: "Force run on simulator even if device is available")
     var forceSimulator: Bool = false
 
+    @Flag(
+      name: .customLong("allow-provisioning-updates"),
+      help: "Allow Xcode to update provisioning profiles automatically"
+    )
+    var allowProvisioningUpdates: Bool = false
+
+    @Flag(
+      name: .customLong("verbose"),
+      help: "Stream full xcodebuild output"
+    )
+    var verbose: Bool = false
+
     func run() throws {
       // Change to project directory if specified
       if let path = path {
@@ -51,6 +63,10 @@ extension Sidekick {
       let target = try determineRunTarget(config: config, forceSimulator: forceSimulator)
       print("   ✓ Selected: \(target.displayName)")
 
+      if allowProvisioningUpdates || (config?.allowProvisioningUpdates ?? false) {
+        print("   ✓ Provisioning updates enabled")
+      }
+
       // Build the app
       print("\n🔨 Starting build phase...")
       _ = try buildApp(config: config, target: target)
@@ -69,6 +85,7 @@ extension Sidekick {
 
     private func buildApp(config: SidekickConfig?, target: RunTarget) throws -> BuildOutput {
       let platform: Platform = target.isDevice ? .iosDevice : .iosSim
+      let resolvedAllowProvisioning = allowProvisioningUpdates || (config?.allowProvisioningUpdates ?? false)
 
       let buildScheme = scheme ?? config?.scheme ?? "clavis"
       let buildConfig = configuration ?? config?.configuration ?? "Debug"
@@ -87,6 +104,9 @@ extension Sidekick {
       if clean {
         print("   Clean build: Yes")
       }
+      if resolvedAllowProvisioning {
+        print("   Provisioning updates: Enabled")
+      }
 
       let args = buildXcodebuildArgs(
         workspace: buildWorkspace,
@@ -94,11 +114,18 @@ extension Sidekick {
         scheme: buildScheme,
         configuration: buildConfig,
         target: target,
+        allowProvisioningUpdates: resolvedAllowProvisioning,
         clean: clean
       )
 
-      let result = try withSpinner(message: "Building..") {
-        try runProcess(executable: "/usr/bin/xcodebuild", arguments: args)
+      let result: ProcessResult
+      if verbose {
+        print("🔎 Streaming xcodebuild output...")
+        result = try runProcessStreaming(executable: "/usr/bin/xcodebuild", arguments: args)
+      } else {
+        result = try withSpinner(message: "Building..") {
+          try runProcess(executable: "/usr/bin/xcodebuild", arguments: args)
+        }
       }
 
       if result.exitCode != 0 {
@@ -121,6 +148,7 @@ extension Sidekick {
       scheme: String,
       configuration: String,
       target: RunTarget,
+      allowProvisioningUpdates: Bool,
       clean: Bool
     ) -> [String] {
       var args: [String] = []
@@ -144,6 +172,10 @@ extension Sidekick {
 
       if clean {
         args.append("clean")
+      }
+
+      if allowProvisioningUpdates {
+        args.append("-allowProvisioningUpdates")
       }
 
       args.append("build")

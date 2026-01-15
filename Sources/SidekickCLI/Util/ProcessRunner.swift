@@ -22,6 +22,36 @@ func runProcess(
   arguments: [String],
   input: Data? = nil
 ) throws -> ProcessResult {
+  try runProcessInternal(
+    executable: executable,
+    arguments: arguments,
+    input: input,
+    streamOutput: false
+  )
+}
+
+func runProcessStreaming(
+  executable: String,
+  arguments: [String]
+) throws -> ProcessResult {
+  try runProcessInternal(
+    executable: executable,
+    arguments: arguments,
+    input: nil,
+    streamOutput: true
+  )
+}
+
+private final class DataBox {
+  var value = Data()
+}
+
+private func runProcessInternal(
+  executable: String,
+  arguments: [String],
+  input: Data?,
+  streamOutput: Bool
+) throws -> ProcessResult {
   let process = Process()
   process.executableURL = URL(fileURLWithPath: executable)
   process.arguments = arguments
@@ -30,6 +60,27 @@ func runProcess(
   let stderrPipe = Pipe()
   process.standardOutput = stdoutPipe
   process.standardError = stderrPipe
+
+  let stdoutData = DataBox()
+  let stderrData = DataBox()
+
+  stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
+    let data = handle.availableData
+    if data.isEmpty { return }
+    stdoutData.value.append(data)
+    if streamOutput {
+      FileHandle.standardOutput.write(data)
+    }
+  }
+
+  stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+    let data = handle.availableData
+    if data.isEmpty { return }
+    stderrData.value.append(data)
+    if streamOutput {
+      FileHandle.standardError.write(data)
+    }
+  }
 
   if let input {
     let stdinPipe = Pipe()
@@ -45,14 +96,16 @@ func runProcess(
   }
 
   process.waitUntilExit()
+  stdoutPipe.fileHandleForReading.readabilityHandler = nil
+  stderrPipe.fileHandleForReading.readabilityHandler = nil
 
-  let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-  let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+  stdoutData.value.append(stdoutPipe.fileHandleForReading.readDataToEndOfFile())
+  stderrData.value.append(stderrPipe.fileHandleForReading.readDataToEndOfFile())
 
   return ProcessResult(
     exitCode: process.terminationStatus,
-    stdout: String(decoding: stdoutData, as: UTF8.self),
-    stderr: String(decoding: stderrData, as: UTF8.self)
+    stdout: String(decoding: stdoutData.value, as: UTF8.self),
+    stderr: String(decoding: stderrData.value, as: UTF8.self)
   )
 }
 
