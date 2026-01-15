@@ -19,6 +19,8 @@ sidekick setup --non-interactive
 
 - `--path <dir>`: Directory to scan for `.xcworkspace` or `.xcodeproj` (defaults to current).
 - `--non-interactive`: Auto-select the first detected workspace/project, scheme, configuration, and platform.
+- `--allow-provisioning-updates`: Save a default to allow Xcode provisioning updates.
+- `--archive-output <path>`: Default archive directory or `.xcarchive` path.
 
 ## What it does
 
@@ -27,7 +29,7 @@ sidekick setup --non-interactive
 3) Prompts (or auto-selects) scheme, configuration, and platform (`ios-sim`, `ios-device`, `macos`).  
 4) If platform is `ios-sim`, optionally prompts for a **default simulator** (saved for future run/test commands).  
 5) If platform is `ios-device`, optionally prompts for a **default device**, but only if a device is connected.  
-6) Writes `.sidekick/config.json` in the target directory with the chosen defaults.
+6) Writes `.sidekick/config.json` in the target directory with the chosen defaults (including archive output if provided).
 
 ## Best practices
 

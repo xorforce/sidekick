@@ -27,6 +27,8 @@ sidekick build --configuration Release --clean
 - `--configuration <name>`: Build configuration (default `Debug` or config default).
 - `--platform <ios-sim|ios-device|macos>`: SDK/destination helper.
 - `--clean`: Run `clean` before `build`.
+- `--allow-provisioning-updates`: Allow Xcode to update provisioning profiles automatically.
+- `--verbose`: Stream full `xcodebuild` output (skips spinner).
 
 ## Behavior
 

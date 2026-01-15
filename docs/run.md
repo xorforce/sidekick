@@ -26,6 +26,8 @@ sidekick run --clean
 - `--configuration <name>`: Configuration override (default `Debug`).
 - `--clean`: Run `xcodebuild clean build`.
 - `--simulator`: Skip device selection and run on simulator.
+- `--allow-provisioning-updates`: Allow Xcode to update provisioning profiles automatically.
+- `--verbose`: Stream full `xcodebuild` output (skips spinner).
 
 ## Target selection logic
 
@@ -49,5 +51,6 @@ sidekick run --clean
 
 - **“Launch succeeded but I don’t see the app” (simulator)**: Sidekick attempts to open the Simulator app and select the UDID; if your Simulator app is closed/minimized, bring it to front and re-run.
 - **Provisioning failures on device**: Ensure your signing/provisioning profile includes the device UDID and that the scheme is configured for the selected team.
+- **Provisioning prompts or profile errors**: Re-run with `--allow-provisioning-updates` or set it via `sidekick setup`.
 - **Defaults not applied**: Config is loaded from the current working directory; use `--path` to point at the project root containing `.sidekick/config.json`.
 
