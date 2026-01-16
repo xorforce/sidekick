@@ -22,6 +22,9 @@ extension Sidekick {
     @Option(name: .customLong("configuration"), help: "Build configuration (Debug/Release)")
     var configuration: String?
 
+    @Option(name: .customLong("config"), help: "Path to Sidekick config file")
+    var configPath: String?
+
     @Flag(name: .customLong("clean"), help: "Clean before building")
     var clean: Bool = false
 
@@ -52,11 +55,19 @@ extension Sidekick {
       }
 
       print("⚙️  Loading configuration...")
-      let config = loadConfigIfAvailable()
+      let config = loadConfigIfAvailable(configPath: configPath)
       if config != nil {
-        print("   ✓ Found .sidekick/config.json")
+        if let configPath {
+          print("   ✓ Found config at \(configPath)")
+        } else {
+          print("   ✓ Found .sidekick/config.json")
+        }
       } else {
-        print("   ⚠️  No config file found, using defaults")
+        if let configPath {
+          print("   ⚠️  No config file found at \(configPath), using defaults")
+        } else {
+          print("   ⚠️  No config file found, using defaults")
+        }
       }
       try runHookIfNeeded(config: config, command: .run, phase: .pre)
 

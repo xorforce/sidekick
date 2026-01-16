@@ -99,6 +99,28 @@ func loadConfigIfAvailable(
   root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 ) -> SidekickConfig? {
   let path = configFilePath(root: root)
+  return loadConfigFromPath(path)
+}
+
+func loadConfigIfAvailable(
+  configPath: String?,
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> SidekickConfig? {
+  guard let configPath else {
+    return loadConfigIfAvailable(root: root)
+  }
+
+  let expandedPath = NSString(string: configPath).expandingTildeInPath
+  let resolvedURL = URL(fileURLWithPath: expandedPath, relativeTo: root).standardizedFileURL
+  if !FileManager.default.fileExists(atPath: resolvedURL.path) {
+    print("Warning: config not found at \(resolvedURL.path)")
+    return nil
+  }
+
+  return loadConfigFromPath(resolvedURL)
+}
+
+private func loadConfigFromPath(_ path: URL) -> SidekickConfig? {
   guard FileManager.default.fileExists(atPath: path.path) else {
     return nil
   }

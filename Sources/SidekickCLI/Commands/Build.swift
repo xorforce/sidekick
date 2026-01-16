@@ -22,6 +22,9 @@ extension Sidekick {
     @Option(name: .customLong("configuration"), help: "Build configuration (Debug/Release)")
     var configuration: String?
 
+    @Option(name: .customLong("config"), help: "Path to Sidekick config file")
+    var configPath: String?
+
     @Option(name: .customLong("platform"), help: "Platform: ios-sim, ios-device, macos")
     var platform: Platform?
 
@@ -41,7 +44,7 @@ extension Sidekick {
     var verbose: Bool = false
 
     func run() throws {
-      let config = loadConfigIfAvailable()
+      let config = loadConfigIfAvailable(configPath: configPath)
       try runHookIfNeeded(config: config, command: .build, phase: .pre)
       let resolvedAllowProvisioning = allowProvisioningUpdates || (config?.allowProvisioningUpdates ?? false)
 
