@@ -29,7 +29,7 @@ enum RunError: Error, CustomStringConvertible {
   var description: String {
     switch self {
     case .noTargetAvailable:
-      return "No device or simulator available. Run 'sidekick init' to configure."
+      return "No device or simulator available. Run 'sidekick configure --init' to configure."
     case .failedToGetBuildSettings(let error):
       return "Failed to get build settings: \(error)"
     case .missingBuildSettings:

@@ -44,7 +44,7 @@ private func prettifyRuntime(_ runtimeKey: String) -> String {
   return s
 }
 
-private func formatRuntimeForDisplay(_ runtimeKey: String) -> String {
+func formatRuntimeForDisplay(_ runtimeKey: String) -> String {
   var s = runtimeKey
   s = s.replacingOccurrences(of: "com.apple.CoreSimulator.SimRuntime.", with: "")
   

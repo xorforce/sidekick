@@ -11,6 +11,12 @@ extension Sidekick {
     @Option(name: .customLong("path"), help: "Project root to scan (defaults to current directory)")
     var path: String?
 
+    @Flag(name: .customLong("init"), help: "Initialize a default config for this project")
+    var initialize: Bool = false
+
+    @Option(name: .customLong("set"), help: "Set the default config name")
+    var setDefault: String?
+
     @Flag(name: .customLong("non-interactive"), help: "Use first detected options without prompts")
     var nonInteractive: Bool = false
 
@@ -28,64 +34,43 @@ extension Sidekick {
 
     func run() throws {
       let root = URL(fileURLWithPath: path ?? FileManager.default.currentDirectoryPath)
-      let existingConfig = loadConfigIfAvailable(root: root)
-      let projects = withSpinner(message: "Detecting projects") {
-        detectProjects(in: root)
+      if let setDefault {
+        do {
+          try setDefaultConfig(name: setDefault, root: root)
+          print("✅ Default config set to '\(setDefault)'")
+          return
+        } catch {
+          print("❌ \(error.localizedDescription)")
+          throw ExitCode(1)
+        }
       }
 
-      guard !projects.isEmpty else {
-        print("No .xcworkspace or .xcodeproj found under \(root.path).")
+      guard initialize else {
+        print("❌ Missing action. Use 'sidekick configure --init' for setup or 'sidekick configure --set <name>'.")
         throw ExitCode(1)
       }
 
-      let project = chooseProject(from: projects, nonInteractive: nonInteractive)
-      let schemes = withSpinner(message: "Listing schemes") {
-        listSchemes(for: project)
-      }
-      let configurations = withSpinner(message: "Listing configurations") {
-        listConfigurations(for: project)
-      }
+      try runInit(root: root)
+    }
 
-      let scheme = try chooseScheme(schemes: schemes, nonInteractive: nonInteractive)
-      let configuration = chooseOption(
-        prompt: "Select configuration",
-        options: configurations.isEmpty ? ["Debug", "Release"] : configurations,
-        nonInteractive: nonInteractive
-      ) ?? "Debug"
-
-      let platformOptions = Platform.allCases.map { $0.rawValue }
-      let platformRaw = chooseOption(
-        prompt: "Select platform",
-        options: platformOptions,
-        nonInteractive: nonInteractive
-      ) ?? Platform.iosSim.rawValue
-      let platform = Platform(rawValue: platformRaw)
-
-      var config = SidekickConfig(
-        workspace: project.workspacePath,
-        project: project.projectPath,
-        scheme: scheme,
-        configuration: configuration,
-        platform: platform,
+    private func runInit(root: URL) throws {
+      let existingConfig = loadConfigIfAvailable(root: root)
+      let config = try buildSidekickConfig(
+        root: root,
+        existingConfig: existingConfig,
+        nonInteractive: nonInteractive,
         allowProvisioningUpdates: allowProvisioningUpdates,
-        archiveOutputPath: archiveOutput,
-        hooks: existingConfig?.hooks,
-        setupJob: existingConfig?.setupJob,
-        setupJobCompleted: existingConfig?.setupJobCompleted ?? false
+        archiveOutput: archiveOutput,
+        selectedConfig: nil
       )
 
-      if platform == .iosSim {
-        applyDefaultSimulator(to: &config, nonInteractive: nonInteractive)
-      }
-
-      if platform == .iosDevice {
-        applyDefaultDeviceIfAny(to: &config, nonInteractive: nonInteractive)
-      }
-
-      try saveConfig(config, root: root)
+      let defaultName = "default"
+      try saveNamedConfig(config, name: defaultName, root: root)
+      try setDefaultConfig(name: defaultName, root: root)
 
       print("""
 Saved sidekick config:
+  Name: \(defaultName)
   Workspace: \(config.workspace ?? "-")
   Project: \(config.project ?? "-")
   Scheme: \(config.scheme ?? "-")
@@ -95,13 +80,14 @@ Saved sidekick config:
   Archive output: \(config.archiveOutputPath ?? "-")
   Default simulator: \(formatDefault(name: config.simulatorName, id: config.simulatorUDID))
   Default device: \(formatDefault(name: config.deviceName, id: config.deviceUDID))
-  Path: \(configFilePath(root: root).path)
+  Config path: \(namedConfigPath(name: defaultName, root: root).path)
+  Default path: \(configFilePath(root: root).path)
 """)
     }
   }
 }
 
-private func formatDefault(name: String?, id: String?) -> String {
+func formatDefault(name: String?, id: String?) -> String {
   switch (name?.trimmingCharacters(in: .whitespacesAndNewlines), id?.trimmingCharacters(in: .whitespacesAndNewlines)) {
   case (let name?, let id?) where !name.isEmpty && !id.isEmpty:
     return "\(name) (\(id))"
@@ -114,7 +100,7 @@ private func formatDefault(name: String?, id: String?) -> String {
   }
 }
 
-private func chooseScheme(schemes: [String], nonInteractive: Bool) throws -> String {
+func chooseScheme(schemes: [String], nonInteractive: Bool, selected: String? = nil) throws -> String {
   if schemes.isEmpty {
     print("No schemes detected. Enter scheme name: ", terminator: "")
     let scheme = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -125,35 +111,15 @@ private func chooseScheme(schemes: [String], nonInteractive: Bool) throws -> Str
     return scheme
   }
 
-  return chooseOption(prompt: "Select scheme", options: schemes, nonInteractive: nonInteractive) ?? schemes.first!
+  return chooseOption(
+    prompt: "Select scheme",
+    options: schemes,
+    nonInteractive: nonInteractive,
+    selected: selected
+  ) ?? schemes.first!
 }
 
-private func formatRuntimeForDisplay(_ runtimeKey: String) -> String {
-  var s = runtimeKey
-  s = s.replacingOccurrences(of: "com.apple.CoreSimulator.SimRuntime.", with: "")
-  
-  if s.hasPrefix("iOS-") {
-    return "iOS \(String(s.dropFirst(4)).replacingOccurrences(of: "-", with: "."))"
-  } else if s.hasPrefix("tvOS-") {
-    return "tvOS \(String(s.dropFirst(5)).replacingOccurrences(of: "-", with: "."))"
-  } else if s.hasPrefix("watchOS-") {
-    return "watchOS \(String(s.dropFirst(8)).replacingOccurrences(of: "-", with: "."))"
-  } else if s.hasPrefix("visionOS-") {
-    return "visionOS \(String(s.dropFirst(9)).replacingOccurrences(of: "-", with: "."))"
-  } else if s.hasPrefix("macOS-") {
-    return "macOS \(String(s.dropFirst(6)).replacingOccurrences(of: "-", with: "."))"
-  }
-  
-  var fallback = s
-  fallback = fallback.replacingOccurrences(of: "iOS-", with: "iOS ")
-  fallback = fallback.replacingOccurrences(of: "tvOS-", with: "tvOS ")
-  fallback = fallback.replacingOccurrences(of: "watchOS-", with: "watchOS ")
-  fallback = fallback.replacingOccurrences(of: "visionOS-", with: "visionOS ")
-  fallback = fallback.replacingOccurrences(of: "-", with: ".")
-  return fallback
-}
-
-private func applyDefaultSimulator(to config: inout SidekickConfig, nonInteractive: Bool) {
+func applyDefaultSimulator(to config: inout SidekickConfig, nonInteractive: Bool) {
   do {
     let groups = try withSpinner(message: "Fetching simulators") {
       try fetchSimulators()
@@ -174,7 +140,20 @@ private func applyDefaultSimulator(to config: inout SidekickConfig, nonInteracti
       return "\(device.name) - \(runtimeDisplay)"
     }
 
-    if let chosen = chooseOption(prompt: "Select default simulator (used for run/test)", options: options, nonInteractive: nonInteractive, allowSkip: true) {
+    let selectedOption = flattened.first { (_, device) in
+      device.name == config.simulatorName
+    }.map { (runtime, device) in
+      let runtimeDisplay = formatRuntimeForDisplay(runtime)
+      return "\(device.name) - \(runtimeDisplay)"
+    }
+
+    if let chosen = chooseOption(
+      prompt: "Select default simulator (used for run/test)",
+      options: options,
+      nonInteractive: nonInteractive,
+      allowSkip: true,
+      selected: selectedOption
+    ) {
       if let match = flattened.first(where: { (runtime, device) in
         let runtimeDisplay = formatRuntimeForDisplay(runtime)
         return "\(device.name) - \(runtimeDisplay)" == chosen
@@ -188,7 +167,7 @@ private func applyDefaultSimulator(to config: inout SidekickConfig, nonInteracti
   }
 }
 
-private func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInteractive: Bool) {
+func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInteractive: Bool) {
   do {
     let devices = try withSpinner(message: "Fetching devices") {
       try fetchConnectedPhysicalDevices()
@@ -205,12 +184,16 @@ private func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInterac
     // If devices are available, let user select one
     if !devices.isEmpty {
       let deviceOptions = devices.map { formatDeviceDisplay($0) }
+      let selectedDeviceOption = devices.first { $0.identifier == config.deviceUDID }.map {
+        formatDeviceDisplay($0)
+      }
       
       if let chosen = chooseOption(
         prompt: "Select default device (used for run/test)",
         options: deviceOptions,
         nonInteractive: nonInteractive,
-        allowSkip: true
+        allowSkip: true,
+        selected: selectedDeviceOption
       ) {
         if let match = devices.first(where: { formatDeviceDisplay($0) == chosen }) {
           if let id = match.identifier, !id.isEmpty {
@@ -235,6 +218,12 @@ private func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInterac
       let runtimeDisplay = formatRuntimeForDisplay(runtime)
       return "\(device.name) - \(runtimeDisplay)"
     }
+    let selectedSimulatorOption = simulators.first { (_, device) in
+      device.udid == config.simulatorUDID
+    }.map { (runtime, device) in
+      let runtimeDisplay = formatRuntimeForDisplay(runtime)
+      return "\(device.name) - \(runtimeDisplay)"
+    }
     
     let simulatorPrompt = devices.isEmpty
       ? "Select default simulator (used for run/test)"
@@ -244,7 +233,8 @@ private func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInterac
       prompt: simulatorPrompt,
       options: simulatorOptions,
       nonInteractive: nonInteractive,
-      allowSkip: !devices.isEmpty  // Only allow skip if device was selected
+      allowSkip: !devices.isEmpty,  // Only allow skip if device was selected
+      selected: selectedSimulatorOption
     ) {
       if let match = simulators.first(where: { (runtime, device) in
         let runtimeDisplay = formatRuntimeForDisplay(runtime)
@@ -261,7 +251,7 @@ private func applyDefaultDeviceIfAny(to config: inout SidekickConfig, nonInterac
 
 // MARK: - Project detection and xcodebuild -list parsing
 
-private struct ProjectEntry {
+struct ProjectEntry {
   enum Kind {
     case workspace
     case project
@@ -275,7 +265,7 @@ private struct ProjectEntry {
   var projectPath: String? { kind == .project ? url.path : nil }
 }
 
-private func detectProjects(in root: URL) -> [ProjectEntry] {
+func detectProjects(in root: URL) -> [ProjectEntry] {
   guard let enumerator = FileManager.default.enumerator(
     at: root,
     includingPropertiesForKeys: [.isRegularFileKey],
@@ -310,15 +300,28 @@ private func detectProjects(in root: URL) -> [ProjectEntry] {
   }
 }
 
-private func chooseProject(from entries: [ProjectEntry], nonInteractive: Bool) -> ProjectEntry {
-  guard entries.count > 1, !nonInteractive else { return entries.first! }
+func chooseProject(
+  from entries: [ProjectEntry],
+  nonInteractive: Bool,
+  selectedPath: String? = nil
+) -> ProjectEntry {
+  let selectedIndex = entries.firstIndex { $0.url.path == selectedPath }
+  guard entries.count > 1, !nonInteractive else {
+    return selectedIndex.map { entries[$0] } ?? entries.first!
+  }
 
   let options = entries.map { $0.displayName }
+  let displayOptions = options.enumerated().map { index, name in
+    if index == selectedIndex {
+      return "(selected) \(name)"
+    }
+    return name
+  }
   if let selected = InteractiveSelection.select(
     prompt: "Select workspace/project",
-    options: options
+    options: displayOptions
   ) {
-    if let index = options.firstIndex(of: selected) {
+    if let index = displayOptions.firstIndex(of: selected) {
       return entries[index]
     }
   }
@@ -326,23 +329,34 @@ private func chooseProject(from entries: [ProjectEntry], nonInteractive: Bool) -
   return entries.first!
 }
 
-private func chooseOption(
+func chooseOption(
   prompt: String,
   options: [String],
   nonInteractive: Bool,
-  allowSkip: Bool = false
+  allowSkip: Bool = false,
+  selected: String? = nil
 ) -> String? {
   guard !options.isEmpty else { return nil }
-  guard options.count > 1, !nonInteractive else { return options.first }
+  guard options.count > 1, !nonInteractive else { return selected ?? options.first }
 
-  return InteractiveSelection.select(
+  let displayOptions = options.map { option in
+    if option == selected {
+      return "(selected) \(option)"
+    }
+    return option
+  }
+  if let chosen = InteractiveSelection.select(
     prompt: prompt,
-    options: options,
+    options: displayOptions,
     allowSkip: allowSkip
-  )
+  ), let index = displayOptions.firstIndex(of: chosen) {
+    return options[index]
+  }
+
+  return options.first
 }
 
-private func listSchemes(for entry: ProjectEntry) -> [String] {
+func listSchemes(for entry: ProjectEntry) -> [String] {
   let args: [String]
   switch entry.kind {
   case .workspace:
@@ -354,7 +368,7 @@ private func listSchemes(for entry: ProjectEntry) -> [String] {
   return parseListSection(command: "/usr/bin/xcodebuild", arguments: args, section: "Schemes")
 }
 
-private func listConfigurations(for entry: ProjectEntry) -> [String] {
+func listConfigurations(for entry: ProjectEntry) -> [String] {
   let args: [String]
   switch entry.kind {
   case .workspace:
@@ -366,7 +380,7 @@ private func listConfigurations(for entry: ProjectEntry) -> [String] {
   return parseListSection(command: "/usr/bin/xcodebuild", arguments: args, section: "Build Configurations")
 }
 
-private func parseListSection(command: String, arguments: [String], section: String) -> [String] {
+func parseListSection(command: String, arguments: [String], section: String) -> [String] {
   let process = Process()
   process.executableURL = URL(fileURLWithPath: command)
   process.arguments = arguments
@@ -414,41 +428,3 @@ private func parseListSection(command: String, arguments: [String], section: Str
 }
 
 
-private func formatDeviceDisplay(_ device: PhysicalDevice) -> String {
-  let name = device.name ?? "Unknown"
-  let platform = formatPlatform(device.platform ?? "unknown")
-  let osVersion = formatOSVersion(device.osVersion ?? "unknown")
-  let id = device.identifier ?? "-"
-  
-  // Format: "Name - Platform Version - ID" or "Name - Platform - ID" if no version
-  if osVersion.isEmpty {
-    return "\(name) - \(platform) - \(id)"
-  } else {
-    return "\(name) - \(platform) \(osVersion) - \(id)"
-  }
-}
-
-private func formatPlatform(_ platform: String) -> String {
-  if platform.contains("iphoneos") || platform.contains("iphone") {
-    return "iOS"
-  } else if platform.contains("ipados") || platform.contains("ipad") {
-    return "iPadOS"
-  } else if platform.contains("macos") || platform.contains("mac") {
-    return "macOS"
-  } else if platform.contains("watchos") || platform.contains("watch") {
-    return "watchOS"
-  } else if platform.contains("tvos") || platform.contains("tv") {
-    return "tvOS"
-  } else if platform.contains("visionos") || platform.contains("vision") {
-    return "visionOS"
-  }
-  return platform
-}
-
-private func formatOSVersion(_ osVersion: String) -> String {
-  // Return the actual OS version, or empty string if unknown
-  if osVersion == "unknown" || osVersion.isEmpty {
-    return ""
-  }
-  return osVersion
-}

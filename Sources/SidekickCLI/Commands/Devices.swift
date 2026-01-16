@@ -36,7 +36,7 @@ extension Sidekick {
   }
 }
 
-private func formatDeviceDisplay(_ device: PhysicalDevice) -> String {
+func formatDeviceDisplay(_ device: PhysicalDevice) -> String {
   let name = device.name ?? "Unknown"
   let platform = formatPlatform(device.platform ?? "unknown")
   let osVersion = formatOSVersion(device.osVersion ?? "unknown")
@@ -50,7 +50,7 @@ private func formatDeviceDisplay(_ device: PhysicalDevice) -> String {
   }
 }
 
-private func formatPlatform(_ platform: String) -> String {
+func formatPlatform(_ platform: String) -> String {
   if platform.contains("iphoneos") || platform.contains("iphone") {
     return "iOS"
   } else if platform.contains("ipados") || platform.contains("ipad") {
@@ -67,7 +67,7 @@ private func formatPlatform(_ platform: String) -> String {
   return platform
 }
 
-private func formatOSVersion(_ osVersion: String) -> String {
+func formatOSVersion(_ osVersion: String) -> String {
   // Return the actual OS version, or empty string if unknown
   if osVersion == "unknown" || osVersion.isEmpty {
     return ""

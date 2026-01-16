@@ -149,3 +149,106 @@ func saveConfig(
   try data.write(to: path, options: .atomic)
 }
 
+func configDirectoryPath(
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> URL {
+  root.appendingPathComponent(".sidekick/configs", isDirectory: true)
+}
+
+func namedConfigPath(
+  name: String,
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> URL {
+  configDirectoryPath(root: root).appendingPathComponent("\(name).json")
+}
+
+func listConfigNames(
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> [String] {
+  let directory = configDirectoryPath(root: root)
+  guard let entries = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
+    return []
+  }
+
+  return entries
+    .filter { $0.pathExtension == "json" }
+    .map { $0.deletingPathExtension().lastPathComponent }
+    .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+}
+
+func loadNamedConfig(
+  name: String,
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> SidekickConfig? {
+  let path = namedConfigPath(name: name, root: root)
+  return loadConfigFromPath(path)
+}
+
+func saveNamedConfig(
+  _ config: SidekickConfig,
+  name: String,
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) throws {
+  let directory = configDirectoryPath(root: root)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+  let path = namedConfigPath(name: name, root: root)
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+  let data = try encoder.encode(config)
+  try data.write(to: path, options: .atomic)
+}
+
+func defaultConfigNamePath(
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> URL {
+  root.appendingPathComponent(".sidekick/default-config")
+}
+
+func readDefaultConfigName(
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) -> String? {
+  let path = defaultConfigNamePath(root: root)
+  guard let data = try? Data(contentsOf: path) else {
+    return nil
+  }
+  let name = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+  return name.isEmpty ? nil : name
+}
+
+func writeDefaultConfigName(
+  _ name: String,
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) throws {
+  let path = defaultConfigNamePath(root: root)
+  try FileManager.default.createDirectory(
+    at: path.deletingLastPathComponent(),
+    withIntermediateDirectories: true
+  )
+  let data = Data(name.utf8)
+  try data.write(to: path, options: .atomic)
+}
+
+func setDefaultConfig(
+  name: String,
+  root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+) throws {
+  let namedPath = namedConfigPath(name: name, root: root)
+  guard FileManager.default.fileExists(atPath: namedPath.path) else {
+    throw NSError(domain: "SidekickConfig", code: 1, userInfo: [
+      NSLocalizedDescriptionKey: "Config '\(name)' not found at \(namedPath.path)"
+    ])
+  }
+
+  let defaultPath = configFilePath(root: root)
+  try FileManager.default.createDirectory(
+    at: defaultPath.deletingLastPathComponent(),
+    withIntermediateDirectories: true
+  )
+  if FileManager.default.fileExists(atPath: defaultPath.path) {
+    try FileManager.default.removeItem(at: defaultPath)
+  }
+  try FileManager.default.copyItem(at: namedPath, to: defaultPath)
+  try writeDefaultConfigName(name, root: root)
+}
+
