@@ -26,13 +26,14 @@ sidekick build --configuration Release --clean
 - `--scheme <name>`: Scheme to build (required unless provided via config).
 - `--configuration <name>`: Build configuration (default `Debug` or config default).
 - `--platform <ios-sim|ios-device|macos>`: SDK/destination helper.
+- `--config <path>`: Path to a Sidekick config file (overrides `.sidekick/config.json`).
 - `--clean`: Run `clean` before `build`.
 - `--allow-provisioning-updates`: Allow Xcode to update provisioning profiles automatically.
 - `--verbose`: Stream full `xcodebuild` output (skips spinner).
 
 ## Behavior
 
-- Loads defaults from `.sidekick/config.json` in the current directory, then applies CLI flags as overrides.
+- Loads defaults from `.sidekick/config.json` in the current directory (or `--config`), then applies CLI flags as overrides.
 - Runs `hooks.build.pre` before the build and `hooks.build.post` after a successful build (if set).
 - Resolves `xcpretty` via `xcrun --find` and common paths; streams pretty output when available, otherwise prints raw `xcodebuild` output.
 - Saves logs to `.sidekick/logs/build-<timestamp>/raw.log` and `pretty.log` (pretty falls back to raw if `xcpretty` is missing).

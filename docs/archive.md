@@ -27,6 +27,7 @@ sidekick archive --output ./MyApp.xcarchive
 - `--scheme <name>`: Scheme to archive (required unless provided via config).
 - `--configuration <name>`: Build configuration (default `Release` or config default).
 - `--platform <ios-device|macos>`: SDK/destination helper (archives do not support `ios-sim`).
+- `--config <path>`: Path to a Sidekick config file (overrides `.sidekick/config.json`).
 - `--output <path>`: Directory or `.xcarchive` path for output.
 - `--derived-data <path>`: Derived data path.
 - `--clean`: Run `clean` before `archive`.
@@ -35,7 +36,7 @@ sidekick archive --output ./MyApp.xcarchive
 
 ## Behavior
 
-- Loads defaults from `.sidekick/config.json` in the current directory, then applies CLI flags as overrides.
+- Loads defaults from `.sidekick/config.json` in the current directory (or `--config`), then applies CLI flags as overrides.
 - Runs `hooks.archive.pre` before archiving and `hooks.archive.post` after a successful archive (if set).
 - If `--output` is a directory, a timestamped `<scheme>-<timestamp>.xcarchive` is created inside it.
 - If `--output` ends in `.xcarchive`, that path is used directly.

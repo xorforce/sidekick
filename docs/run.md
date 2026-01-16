@@ -21,6 +21,7 @@ sidekick run --clean
 ## Flags
 
 - `--path <dir>`: Directory to run in (where `.sidekick/config.json` is expected). Defaults to current directory.
+- `--config <path>`: Path to a Sidekick config file (overrides `.sidekick/config.json`).
 - `--workspace <path>` / `--project <path>`: Explicit Xcode container override.
 - `--scheme <name>`: Scheme override.
 - `--configuration <name>`: Configuration override (default `Debug`).

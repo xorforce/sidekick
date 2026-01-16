@@ -6,18 +6,26 @@ Configure Sidekick defaults for a project.
 
 ```bash
 # From project root
-sidekick configure
+sidekick configure --init
 
 # From elsewhere
-sidekick configure --path /path/to/MyApp
+sidekick configure --init --path /path/to/MyApp
 
 # Skip prompts, pick first detected options
-sidekick configure --non-interactive
+sidekick configure --init --non-interactive
+
+# Add a named config profile
+sidekick config add <name>
+
+# Edit a named config profile
+sidekick config edit <name>
 ```
 
 ## Flags
 
 - `--path <dir>`: Directory to scan for `.xcworkspace` or `.xcodeproj` (defaults to current).
+- `--init`: Initialize a default config for this project.
+- `--set <name>`: Set the default config name (copies it to `.sidekick/config.json`).
 - `--non-interactive`: Auto-select the first detected workspace/project, scheme, configuration, and platform.
 - `--allow-provisioning-updates`: Save a default to allow Xcode provisioning updates.
 - `--archive-output <path>`: Default archive directory or `.xcarchive` path.
@@ -29,7 +37,7 @@ sidekick configure --non-interactive
 3) Prompts (or auto-selects) scheme, configuration, and platform (`ios-sim`, `ios-device`, `macos`).  
 4) If platform is `ios-sim`, optionally prompts for a **default simulator** (saved for future run/test commands).  
 5) If platform is `ios-device`, optionally prompts for a **default device**, but only if a device is connected.  
-6) Writes `.sidekick/config.json` in the target directory with the chosen defaults (including archive output if provided).
+6) Writes the named config to `.sidekick/configs/<name>.json` and sets `.sidekick/config.json` as the default.
 
 ## Command hooks
 
@@ -69,11 +77,12 @@ sidekick setup --path /path/to/MyApp
 - Run from the project root, or pass `--path` to avoid guessing.
 - Prefer `.xcworkspace` when using CocoaPods/SwiftPM aggregates; otherwise `.xcodeproj` is fine.
 - Keep scheme shared in Xcode so `xcodebuild -list` can see it.
-- After changes to schemes/configs, re-run `sidekick configure` to refresh defaults.
+- After changes to schemes/configs, re-run `sidekick configure --init` or `sidekick config edit` to refresh defaults.
 
 ## Do / Don't
 
 - Do commit `.sidekick/config.json` only if it's meant to be team-wide; otherwise, leave it local.
+- Do commit `.sidekick/configs/<name>.json` only if it's meant to be shared.
 - Do verify `scheme` and `configuration` match CI expectations.
 - Don't rely on `--non-interactive` if you have multiple similar schemes; pick explicitly.
 
