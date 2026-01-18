@@ -182,6 +182,7 @@ Saved sidekick config:
   Platform: \(config.platform?.rawValue ?? "-")
   Provisioning updates: \(config.allowProvisioningUpdates ? "Enabled" : "Disabled")
   Archive output: \(config.archiveOutputPath ?? "-")
+  Test plan: \(config.testPlanPath ?? "-")
   Default simulator: \(formatDefault(name: config.simulatorName, id: config.simulatorUDID))
   Default device: \(formatDefault(name: config.deviceName, id: config.deviceUDID))
   Config path: \(namedConfigPath(name: name, root: root).path)

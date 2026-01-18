@@ -5,6 +5,7 @@ enum HookCommand {
   case build
   case run
   case archive
+  case test
 }
 
 enum HookPhase {
@@ -40,6 +41,8 @@ private func hooksForCommand(config: SidekickConfig?, command: HookCommand) -> C
     return config?.hooks?.run
   case .archive:
     return config?.hooks?.archive
+  case .test:
+    return config?.hooks?.test
   }
 }
 
@@ -86,5 +89,7 @@ private func labelFor(command: HookCommand, phase: HookPhase) -> String {
     return "\(prefix)-run"
   case .archive:
     return "\(prefix)-archive"
+  case .test:
+    return "\(prefix)-test"
   }
 }

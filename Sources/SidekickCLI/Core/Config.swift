@@ -14,6 +14,7 @@ struct CommandHookConfig: Codable {
   var build: CommandHooks?
   var run: CommandHooks?
   var archive: CommandHooks?
+  var test: CommandHooks?
 }
 
 struct SidekickConfig: Codable {
@@ -25,6 +26,7 @@ struct SidekickConfig: Codable {
   var derivedDataPath: String?
   var allowProvisioningUpdates: Bool = false
   var archiveOutputPath: String?
+  var testPlanPath: String?
   var hooks: CommandHookConfig? = nil
   var setupJob: CommandHooks? = nil
   var setupJobCompleted: Bool = false
@@ -44,6 +46,7 @@ struct SidekickConfig: Codable {
     derivedDataPath: String? = nil,
     allowProvisioningUpdates: Bool = false,
     archiveOutputPath: String? = nil,
+    testPlanPath: String? = nil,
     hooks: CommandHookConfig? = nil,
     setupJob: CommandHooks? = nil,
     setupJobCompleted: Bool = false,
@@ -60,6 +63,7 @@ struct SidekickConfig: Codable {
     self.derivedDataPath = derivedDataPath
     self.allowProvisioningUpdates = allowProvisioningUpdates
     self.archiveOutputPath = archiveOutputPath
+    self.testPlanPath = testPlanPath
     self.hooks = hooks
     self.setupJob = setupJob
     self.setupJobCompleted = setupJobCompleted
@@ -79,6 +83,7 @@ struct SidekickConfig: Codable {
     derivedDataPath = try container.decodeIfPresent(String.self, forKey: .derivedDataPath)
     allowProvisioningUpdates = try container.decodeIfPresent(Bool.self, forKey: .allowProvisioningUpdates) ?? false
     archiveOutputPath = try container.decodeIfPresent(String.self, forKey: .archiveOutputPath)
+    testPlanPath = try container.decodeIfPresent(String.self, forKey: .testPlanPath)
     hooks = try container.decodeIfPresent(CommandHookConfig.self, forKey: .hooks)
     setupJob = try container.decodeIfPresent(CommandHooks.self, forKey: .setupJob)
     setupJobCompleted = try container.decodeIfPresent(Bool.self, forKey: .setupJobCompleted) ?? false

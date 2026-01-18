@@ -18,14 +18,18 @@ sidekick --help
 
 ## Config
 
-Sidekick reads `.sidekick/config.json` from the current working directory. You can add pre/post hooks per command (build/run/archive) and a one-time setup job. Named configs live in `.sidekick/configs/<name>.json`, and `sidekick configure --set <name>` sets the default.
+Sidekick reads `.sidekick/config.json` from the current working directory. You can add pre/post hooks per command (build/run/archive/test), set a default test plan, and configure a one-time setup job. Named configs live in `.sidekick/configs/<name>.json`, and `sidekick configure --set <name>` sets the default.
 
 ```json
 {
+  "testPlanPath": "./Tests/MyApp.xctestplan",
   "hooks": {
     "build": {
       "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] },
       "post": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+    },
+    "test": {
+      "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
     },
     "run": {
       "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
@@ -57,6 +61,8 @@ There is a sample script at `scripts/hook-echo.sh` that only echoes, useful for 
   - Archives to an `.xcarchive` with destination defaults from config; supports provisioning updates and verbose output.
 - `sidekick run [--path <dir>] [--workspace <path>|--project <path>] [--scheme <name>] [--configuration <cfg>] [--config <path>] [--clean] [--simulator] [--allow-provisioning-updates] [--verbose]`
   - Builds, installs, and launches on **USB-connected** device if configured + connected; otherwise uses configured simulator; otherwise picks any available iPhone simulator.
+- `sidekick test [--path <dir>] [--workspace <path>|--project <path>] [--scheme <name>] [--configuration <cfg>] [--config <path>] [--platform ios-sim|ios-device|macos] [--test-plan <plan>] [--derived-data <path>] [--clean] [--allow-provisioning-updates] [--verbose]`
+  - Runs xcodebuild tests with an optional test plan, prints passed/failed test cases, and falls back to a simulator when a device is unavailable.
 - `sidekick sim`
   - Lists available simulators (via `xcrun simctl list`).
 - `sidekick devices`
@@ -87,6 +93,9 @@ sidekick archive
 # Build + run using saved defaults
 sidekick run
 
+# Run tests using saved defaults
+sidekick test
+
 # Override saved defaults
 sidekick build --scheme MyApp --configuration Release --platform ios-sim --clean
 
@@ -101,6 +110,9 @@ sidekick archive --output ./archives
 
 # Force simulator (skip device selection)
 sidekick run --simulator
+
+# Use a specific test plan
+sidekick test --test-plan ./Tests/MyApp.xctestplan
 ```
 
 ## Development
@@ -113,7 +125,7 @@ swift test           # tests (placeholder)
 
 ## Docs
 
-See `docs/` for per-command guides and best practices (`build`, `run`, `archive`, `setup`).
+See `docs/` for per-command guides and best practices (`build`, `run`, `archive`, `test`, `setup`).
 
 ## License
 

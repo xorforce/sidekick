@@ -37,6 +37,7 @@ func buildSidekickConfig(
     platform: platform,
     allowProvisioningUpdates: allowProvisioningUpdates,
     archiveOutputPath: archiveOutput ?? selectedConfig?.archiveOutputPath,
+    testPlanPath: selectedConfig?.testPlanPath ?? existingConfig?.testPlanPath,
     hooks: existingConfig?.hooks,
     setupJob: existingConfig?.setupJob,
     setupJobCompleted: existingConfig?.setupJobCompleted ?? false,

@@ -41,7 +41,9 @@ sidekick config edit <name>
 
 ## Command hooks
 
-If `hooks.<command>.pre` or `hooks.<command>.post` are set in `.sidekick/config.json`, they run before/after that command (build/run/archive).
+If `hooks.<command>.pre` or `hooks.<command>.post` are set in `.sidekick/config.json`, they run before/after that command (build/run/archive/test).
+
+You can also set a default test plan using `testPlanPath` (name or `.xctestplan` path), which `sidekick test` will use unless overridden with `--test-plan`.
 
 ## One-time setup job
 
@@ -49,10 +51,14 @@ If `setupJob.pre` or `setupJob.post` is set in `.sidekick/config.json`, those co
 
 ```json
 {
+  "testPlanPath": "./Tests/MyApp.xctestplan",
   "hooks": {
     "build": {
       "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] },
       "post": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
+    },
+    "test": {
+      "pre": { "command": "bash", "args": ["./scripts/hook-echo.sh"] }
     }
   },
   "setupJob": {
