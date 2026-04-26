@@ -47,6 +47,7 @@ extension Sidekick {
       let config = loadConfigIfAvailable(configPath: configPath)
       try runHookIfNeeded(config: config, command: .build, phase: .pre)
       let resolvedAllowProvisioning = allowProvisioningUpdates || (config?.allowProvisioningUpdates ?? false)
+      var logger = PhaseLogger()
 
       let options = BuildOptions(
         profile: profile,
@@ -63,34 +64,23 @@ extension Sidekick {
       let logPaths = try createLogPaths()
 
       do {
-        // Determine which destination will be used
         let destination = determineBuildDestination(options: options)
-        if let dest = destination {
-          let destType = dest.type == "device" ? "device" : "simulator"
-          print("Building for \(destType): \(dest.name) (\(dest.id))")
-        }
-        if options.allowProvisioningUpdates {
-          print("Provisioning updates: Enabled")
-        }
-        
-        // Only show spinner if xcpretty is not available (raw output mode)
-        let hasXcpretty = resolveXcprettyPath() != nil
+        logger.heading("Build Setup")
+        logBuildSetup(&logger, options: options, destination: destination)
+
+        logger.heading("Building")
+        logger.detail("Running xcodebuild")
         let result: BuildResult
-        if hasXcpretty {
-          // Streaming output, no spinner
-          result = try runXcodebuild(options: options)
-        } else if verbose {
+        if verbose {
           print("🔎 Streaming xcodebuild output...")
-          result = try runXcodebuildStreamingRaw(options: options)
+          result = try runXcodebuild(options: options, verbose: true)
         } else {
-          // Raw output, show spinner
           result = try withSpinner(message: "Building") {
-            try runXcodebuild(options: options)
+            try runXcodebuild(options: options, verbose: false)
           }
         }
-        print("✅ Build succeeded")
+        logger.detail("Build succeeded")
         
-        // Add destination info to logs
         var logHeader = "Build completed successfully\n"
         logHeader += "Scheme: \(options.scheme)\n"
         logHeader += "Configuration: \(options.configuration)\n"
@@ -109,12 +99,12 @@ extension Sidekick {
         let prettyWithHeader = logHeader + prettyToSave
         try prettyWithHeader.write(to: logPaths.prettyLogURL, atomically: true, encoding: .utf8)
 
-        print("\nLogs saved to:")
-        print("  Raw: \(logPaths.rawLogURL.path)")
+        logger.heading("Logs")
+        logger.path("Raw", value: logPaths.rawLogURL.path)
         if prettyLog != nil {
-          print("  Pretty: \(logPaths.prettyLogURL.path)")
+          logger.path("Pretty", value: logPaths.prettyLogURL.path)
         } else {
-          print("  Pretty (fallback to raw): \(logPaths.prettyLogURL.path)")
+          logger.path("Pretty (fallback to raw)", value: logPaths.prettyLogURL.path)
         }
 
         try runHookIfNeeded(config: config, command: .build, phase: .post)
@@ -214,11 +204,44 @@ private enum BuildError: Error {
   }
 }
 
-private func runXcodebuild(options: BuildOptions) throws -> BuildResult {
-  if let xcprettyPath = resolveXcprettyPath() {
+private func runXcodebuild(options: BuildOptions, verbose: Bool) throws -> BuildResult {
+  if verbose, let xcprettyPath = resolveXcprettyPath() {
     return try runXcodebuildStreaming(options: options, xcprettyPath: xcprettyPath)
   }
+  if verbose {
+    return try runXcodebuildStreamingRaw(options: options)
+  }
   return try runXcodebuildRaw(options: options)
+}
+
+private func logBuildSetup(
+  _ logger: inout PhaseLogger,
+  options: BuildOptions,
+  destination: BuildDestination?
+) {
+  logger.detail("Scheme: \(options.scheme)")
+  logger.detail("Configuration: \(options.configuration)")
+
+  if let workspace = options.workspace {
+    logger.path("Workspace", value: workspace)
+  } else if let project = options.project {
+    logger.path("Project", value: project)
+  }
+
+  if let dest = destination {
+    let targetKind = dest.type == "device" ? "device" : "simulator"
+    logger.detail("Target: \(targetKind) \(dest.name) (\(dest.id))")
+  } else if let platform = options.platform {
+    logger.detail("Platform: \(platform.rawValue)")
+  }
+
+  if options.allowProvisioningUpdates {
+    logger.detail("Provisioning updates enabled")
+  }
+
+  if options.clean {
+    logger.detail("Clean build enabled")
+  }
 }
 
 private func runXcodebuildStreamingRaw(options: BuildOptions) throws -> BuildResult {
@@ -572,4 +595,3 @@ private func resolveXcprettyPath() -> String? {
 
   return nil
 }
-
