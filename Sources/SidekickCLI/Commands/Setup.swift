@@ -287,8 +287,10 @@ func detectProjects(in root: URL) -> [ProjectEntry] {
     switch url.pathExtension {
     case "xcworkspace":
       results.append(ProjectEntry(url: url, kind: .workspace))
+      enumerator.skipDescendants()
     case "xcodeproj":
       results.append(ProjectEntry(url: url, kind: .project))
+      enumerator.skipDescendants()
     default:
       break
     }
@@ -404,29 +406,26 @@ func parseListSection(command: String, arguments: [String], section: String) -> 
 
   var values: [String] = []
   var inSection = false
-  for line in output.split(separator: "\n") {
+  var sectionIndent: Int?
+  for rawLine in output.split(separator: "\n", omittingEmptySubsequences: false) {
+    let line = String(rawLine)
     let trimmed = line.trimmingCharacters(in: .whitespaces)
     if trimmed.isEmpty { continue }
-    
-    // Check if this is the section we're looking for
-    if trimmed.hasPrefix(section + ":") {
+
+    let indent = line.prefix { $0 == " " || $0 == "\t" }.count
+    if trimmed == section + ":" {
       inSection = true
+      sectionIndent = indent
       continue
     }
-    
-    // If we're in the section, collect values
+
     if inSection {
-      // Stop if we hit another section header (line ending with ":")
-      if trimmed.hasSuffix(":") && trimmed != section + ":" {
+      guard let sectionIndent else { break }
+      if indent <= sectionIndent {
         break
       }
-      // Only add non-empty lines that aren't section headers
-      if !trimmed.hasSuffix(":") {
-        values.append(trimmed)
-      }
+      values.append(trimmed)
     }
   }
   return values
 }
-
-

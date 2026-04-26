@@ -9,18 +9,19 @@ func buildSidekickConfig(
   archiveOutput: String?,
   selectedConfig: SidekickConfig?
 ) throws -> SidekickConfig {
-  let project = try resolveProject(
+  let projectSelection = try resolveProject(
     root: root,
     nonInteractive: nonInteractive,
     selectedConfig: selectedConfig
   )
   let scheme = try resolveScheme(
-    project: project,
+    project: projectSelection.project,
+    cachedSchemes: projectSelection.schemes,
     nonInteractive: nonInteractive,
     selectedConfig: selectedConfig
   )
   let configuration = resolveConfiguration(
-    project: project,
+    project: projectSelection.project,
     nonInteractive: nonInteractive,
     selectedConfig: selectedConfig
   )
@@ -30,8 +31,8 @@ func buildSidekickConfig(
   )
 
   var config = SidekickConfig(
-    workspace: project.workspacePath,
-    project: project.projectPath,
+    workspace: projectSelection.project.workspacePath,
+    project: projectSelection.project.projectPath,
     scheme: scheme,
     configuration: configuration,
     platform: platform,
@@ -58,11 +59,16 @@ func buildSidekickConfig(
   return config
 }
 
+private struct ResolvedProjectSelection {
+  let project: ProjectEntry
+  let schemes: [String]?
+}
+
 private func resolveProject(
   root: URL,
   nonInteractive: Bool,
   selectedConfig: SidekickConfig?
-) throws -> ProjectEntry {
+) throws -> ResolvedProjectSelection {
   let projects = withSpinner(message: "Detecting projects") {
     detectProjects(in: root)
   }
@@ -73,15 +79,65 @@ private func resolveProject(
   }
 
   let selectedPath = selectedConfig?.workspace ?? selectedConfig?.project
-  return chooseProject(from: projects, nonInteractive: nonInteractive, selectedPath: selectedPath)
+  if nonInteractive, selectedPath == nil {
+    return preferredProject(from: projects)
+  }
+  let chosenProject = chooseProject(
+    from: projects,
+    nonInteractive: nonInteractive,
+    selectedPath: selectedPath
+  )
+  return resolvedSelection(for: chosenProject, among: projects)
+}
+
+private func preferredProject(from projects: [ProjectEntry]) -> ResolvedProjectSelection {
+  for project in projects {
+    let schemes = listSchemes(for: project)
+    if !schemes.isEmpty {
+      return ResolvedProjectSelection(project: project, schemes: schemes)
+    }
+  }
+  return ResolvedProjectSelection(project: projects.first!, schemes: nil)
+}
+
+private func resolvedSelection(
+  for project: ProjectEntry,
+  among projects: [ProjectEntry]
+) -> ResolvedProjectSelection {
+  let schemes = listSchemes(for: project)
+  if !schemes.isEmpty {
+    return ResolvedProjectSelection(project: project, schemes: schemes)
+  }
+
+  if let fallback = fallbackProject(for: project, among: projects) {
+    let fallbackSchemes = listSchemes(for: fallback)
+    if !fallbackSchemes.isEmpty {
+      return ResolvedProjectSelection(project: fallback, schemes: fallbackSchemes)
+    }
+  }
+
+  return ResolvedProjectSelection(project: project, schemes: nil)
+}
+
+private func fallbackProject(
+  for project: ProjectEntry,
+  among projects: [ProjectEntry]
+) -> ProjectEntry? {
+  guard project.kind == .workspace else { return nil }
+  let workspaceBaseName = project.url.deletingPathExtension().lastPathComponent
+  return projects.first { candidate in
+    candidate.kind == .project
+      && candidate.url.deletingPathExtension().lastPathComponent == workspaceBaseName
+  }
 }
 
 private func resolveScheme(
   project: ProjectEntry,
+  cachedSchemes: [String]?,
   nonInteractive: Bool,
   selectedConfig: SidekickConfig?
 ) throws -> String {
-  let schemes = withSpinner(message: "Listing schemes") {
+  let schemes = cachedSchemes ?? withSpinner(message: "Listing schemes") {
     listSchemes(for: project)
   }
   return try chooseScheme(
