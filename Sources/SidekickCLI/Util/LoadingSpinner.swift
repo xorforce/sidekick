@@ -10,7 +10,7 @@ class LoadingSpinner {
   private var isRunning = false
   private var spinnerThread: Thread?
   private let message: String
-  private let spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+  private let spinnerFrames = ["|", "/", "-", "\\"]
   private var currentFrameIndex = 0
   
   init(message: String) {
@@ -54,7 +54,7 @@ class LoadingSpinner {
       print(finalMessage)
     } else if !success {
       // Only show error messages, not success
-      print("❌ \(self.message)")
+      print("Error: \(self.message)")
     }
     // Success: just clear the spinner, don't print anything
     

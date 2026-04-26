@@ -92,7 +92,7 @@ private func resolveProject(
 
 private func preferredProject(from projects: [ProjectEntry]) -> ResolvedProjectSelection {
   for project in projects {
-    let schemes = listSchemes(for: project)
+    let schemes = loadSchemes(for: project)
     if !schemes.isEmpty {
       return ResolvedProjectSelection(project: project, schemes: schemes)
     }
@@ -104,13 +104,13 @@ private func resolvedSelection(
   for project: ProjectEntry,
   among projects: [ProjectEntry]
 ) -> ResolvedProjectSelection {
-  let schemes = listSchemes(for: project)
+  let schemes = loadSchemes(for: project)
   if !schemes.isEmpty {
     return ResolvedProjectSelection(project: project, schemes: schemes)
   }
 
   if let fallback = fallbackProject(for: project, among: projects) {
-    let fallbackSchemes = listSchemes(for: fallback)
+    let fallbackSchemes = loadSchemes(for: fallback)
     if !fallbackSchemes.isEmpty {
       return ResolvedProjectSelection(project: fallback, schemes: fallbackSchemes)
     }
@@ -137,14 +137,18 @@ private func resolveScheme(
   nonInteractive: Bool,
   selectedConfig: SidekickConfig?
 ) throws -> String {
-  let schemes = cachedSchemes ?? withSpinner(message: "Listing schemes") {
-    listSchemes(for: project)
-  }
+  let schemes = cachedSchemes ?? loadSchemes(for: project)
   return try chooseScheme(
     schemes: schemes,
     nonInteractive: nonInteractive,
     selected: selectedConfig?.scheme
   )
+}
+
+private func loadSchemes(for project: ProjectEntry) -> [String] {
+  withSpinner(message: "Listing schemes") {
+    listSchemes(for: project)
+  }
 }
 
 private func resolveConfiguration(
