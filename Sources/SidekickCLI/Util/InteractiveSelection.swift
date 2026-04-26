@@ -11,6 +11,7 @@ enum TerminalKey {
   case down
   case enter
   case escape
+  case backspace
   case other(Character)
 }
 
@@ -23,6 +24,8 @@ private struct ANSICodes {
 }
 
 struct InteractiveSelection {
+  private static let maxVisibleOptions = 10
+
   static func select(
     prompt: String,
     options: [String],
@@ -34,99 +37,170 @@ struct InteractiveSelection {
     let terminal = TerminalController()
     defer { terminal.restore() }
     
+    var query = ""
+    var filteredOptions = options
     var selectedIndex = 0
-    let skipIndex = allowSkip ? -1 : nil
-    let totalLines = options.count + (allowSkip ? 1 : 0) + 3 // +3 for prompt lines + blank line
     var isFirstRender = true
-    
+
+    func updateFilteredOptions(resetSelection: Bool) {
+      filteredOptions = filteredList(from: options, matching: query)
+      if filteredOptions.isEmpty {
+        selectedIndex = allowSkip ? -1 : 0
+        return
+      }
+      if resetSelection || selectedIndex >= filteredOptions.count {
+        selectedIndex = 0
+      }
+    }
+
     func render() {
       if !isFirstRender {
-        // Clear previous rendering (options + prompt lines)
-        terminal.clearLines(count: totalLines)
+        terminal.clearLines(count: renderedLineCount(for: filteredOptions.count, allowSkip: allowSkip))
       } else {
         isFirstRender = false
       }
-      
-      // Display prompt
+
       print("\(prompt):")
-      print("(Use ↑/↓ to navigate, Enter to select\(allowSkip ? ", Esc to skip" : ""))")
-      print() // Blank line for spacing
-      
-      // Display options
-      if allowSkip {
-        if skipIndex == selectedIndex {
-          print("\(ANSICodes.brightCyan)\(ANSICodes.bold)→ [Skip]\(ANSICodes.reset)")
-        } else {
-          print("  [Skip]")
-        }
-      }
-      
-      for (index, option) in options.enumerated() {
-        if index == selectedIndex {
-          print("\(ANSICodes.brightCyan)\(ANSICodes.bold)→ [\(index + 1)] \(option)\(ANSICodes.reset)")
-        } else {
-          print("  [\(index + 1)] \(option)")
-        }
-      }
+      print("(Type to filter, ↑/↓ to navigate, Enter to select\(allowSkip ? ", Esc to skip" : ""))")
+      print("Filter: \(query.isEmpty ? "-" : query)")
+      print()
+
+      renderSkipRow(selectedIndex: selectedIndex, allowSkip: allowSkip)
+      renderVisibleOptions(filteredOptions, selectedIndex: selectedIndex, query: query)
+      renderFilterSummary(options: options, filteredOptions: filteredOptions, query: query)
     }
-    
+
+    updateFilteredOptions(resetSelection: true)
     render()
-    
+
     while true {
       guard let key = terminal.readKey() else { continue }
-      
+
       switch key {
       case .up:
-        if allowSkip && selectedIndex == 0 {
-          selectedIndex = skipIndex!
-        } else if selectedIndex > 0 {
-          selectedIndex -= 1
-        } else if allowSkip {
-          selectedIndex = options.count - 1
-        }
+        selectedIndex = previousSelection(
+          current: selectedIndex,
+          optionCount: filteredOptions.count,
+          allowSkip: allowSkip
+        )
         render()
-        
+
       case .down:
-        if allowSkip && selectedIndex == skipIndex {
-          selectedIndex = 0
-        } else if selectedIndex < options.count - 1 {
-          selectedIndex += 1
-        } else if allowSkip {
-          selectedIndex = skipIndex!
-        }
+        selectedIndex = nextSelection(
+          current: selectedIndex,
+          optionCount: filteredOptions.count,
+          allowSkip: allowSkip
+        )
         render()
-        
+
       case .enter:
-        // Clear the selection display and print final choice
-        terminal.clearLines(count: totalLines)
-        if allowSkip && selectedIndex == skipIndex {
+        terminal.clearLines(count: renderedLineCount(for: filteredOptions.count, allowSkip: allowSkip))
+        if allowSkip && selectedIndex == -1 {
           print("\(prompt): Skipped")
-          print() // Blank line for spacing
+          print()
           return nil
         }
-        let selected = options[selectedIndex]
+        guard !filteredOptions.isEmpty, filteredOptions.indices.contains(selectedIndex) else {
+          render()
+          continue
+        }
+        let selected = filteredOptions[selectedIndex]
         print("\(prompt): \(selected)")
-        print() // Blank line for spacing
+        print()
         return selected
-        
+
       case .escape:
         if allowSkip {
           return nil
         }
-        // If skip not allowed, treat escape as cancel and return first option
         return options.first
-        
+
+      case .backspace:
+        guard !query.isEmpty else { continue }
+        query.removeLast()
+        updateFilteredOptions(resetSelection: true)
+        render()
+
       case .other(let char):
-        // Handle numeric input (1-9)
-        if let num = Int(String(char)), num >= 1, num <= options.count {
-          selectedIndex = num - 1
-          render()
-        } else if allowSkip && char == "0" {
-          selectedIndex = skipIndex!
-          render()
-        }
+        guard shouldAppendToQuery(char) else { continue }
+        query.append(char)
+        updateFilteredOptions(resetSelection: true)
+        render()
       }
     }
+  }
+
+  private static func filteredList(from options: [String], matching query: String) -> [String] {
+    guard !query.isEmpty else { return options }
+    return options.filter { option in
+      option.localizedCaseInsensitiveContains(query)
+    }
+  }
+
+  private static func renderedLineCount(for optionCount: Int, allowSkip: Bool) -> Int {
+    let visibleOptions = min(optionCount, maxVisibleOptions)
+    return visibleOptions + (allowSkip ? 1 : 0) + 5
+  }
+
+  private static func renderSkipRow(selectedIndex: Int, allowSkip: Bool) {
+    guard allowSkip else { return }
+    if selectedIndex == -1 {
+      print("\(ANSICodes.brightCyan)\(ANSICodes.bold)→ [Skip]\(ANSICodes.reset)")
+      return
+    }
+    print("  [Skip]")
+  }
+
+  private static func renderVisibleOptions(_ options: [String], selectedIndex: Int, query: String) {
+    guard !options.isEmpty else {
+      print("  No matches for \"\(query)\"")
+      return
+    }
+
+    let window = visibleWindow(selectedIndex: selectedIndex, optionCount: options.count)
+    for index in window {
+      let marker = index == selectedIndex ? "→" : " "
+      let prefix = index == selectedIndex ? "\(ANSICodes.brightCyan)\(ANSICodes.bold)\(marker)" : " \(marker)"
+      let suffix = index == selectedIndex ? ANSICodes.reset : ""
+      print("\(prefix) [\(index + 1)] \(options[index])\(suffix)")
+    }
+  }
+
+  private static func renderFilterSummary(options: [String], filteredOptions: [String], query: String) {
+    guard options.count > maxVisibleOptions || !query.isEmpty else { return }
+    let count = filteredOptions.count
+    let label = query.isEmpty ? "Showing first \(min(count, maxVisibleOptions)) of \(count)" : "\(count) match\(count == 1 ? "" : "es")"
+    print()
+    print(label)
+  }
+
+  private static func visibleWindow(selectedIndex: Int, optionCount: Int) -> Range<Int> {
+    guard optionCount > maxVisibleOptions, selectedIndex >= 0 else {
+      return 0..<min(optionCount, maxVisibleOptions)
+    }
+    let halfWindow = maxVisibleOptions / 2
+    var start = max(0, selectedIndex - halfWindow)
+    let maxStart = max(0, optionCount - maxVisibleOptions)
+    start = min(start, maxStart)
+    return start..<min(start + maxVisibleOptions, optionCount)
+  }
+
+  private static func previousSelection(current: Int, optionCount: Int, allowSkip: Bool) -> Int {
+    guard optionCount > 0 else { return allowSkip ? -1 : 0 }
+    if allowSkip && current == 0 { return -1 }
+    if current == -1 { return optionCount - 1 }
+    return max(0, current - 1)
+  }
+
+  private static func nextSelection(current: Int, optionCount: Int, allowSkip: Bool) -> Int {
+    guard optionCount > 0 else { return allowSkip ? -1 : 0 }
+    if allowSkip && current == -1 { return 0 }
+    if current < optionCount - 1 { return current + 1 }
+    return allowSkip ? -1 : optionCount - 1
+  }
+
+  private static func shouldAppendToQuery(_ char: Character) -> Bool {
+    char.isLetter || char.isNumber || char == " " || char == "-" || char == "_" || char == "."
   }
 }
 
@@ -201,11 +275,11 @@ private class TerminalController {
     if char == 13 || char == 10 { // Enter/Return
       return .enter
     }
-    
-    if char == 27 { // ESC
-      return .escape
+
+    if char == 0x7F || char == 0x08 { // Delete/Backspace
+      return .backspace
     }
-    
+
     let scalar = UnicodeScalar(char)
     if scalar.isASCII {
       return .other(Character(scalar))
