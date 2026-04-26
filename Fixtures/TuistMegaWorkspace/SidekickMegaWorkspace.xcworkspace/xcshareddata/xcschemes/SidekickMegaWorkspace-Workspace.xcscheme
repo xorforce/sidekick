@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "1010"
+   version = "1.3">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "79EF9A1DA37031F21524FE92"
+               BuildableName = "AnalyticsKit.framework"
+               BlueprintName = "AnalyticsKit"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BF57BF9A733F169D3D13589F"
+               BuildableName = "AppCore.framework"
+               BlueprintName = "AppCore"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "53BDFBD14D6974450DAB2687"
+               BuildableName = "AuthFeature.framework"
+               BlueprintName = "AuthFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "989209F1F1FBFFC28E03C0F5"
+               BuildableName = "BackofficeApp.app"
+               BlueprintName = "BackofficeApp"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D50047ADA6CCED4D177E834F"
+               BuildableName = "BackofficeAppTests.xctest"
+               BlueprintName = "BackofficeAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3727CAE1F4C6F194315E5CA6"
+               BuildableName = "CartFeature.framework"
+               BlueprintName = "CartFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "416E0CBCF946FDC8ADE911F5"
+               BuildableName = "CatalogFeature.framework"
+               BlueprintName = "CatalogFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "08A7FC76BABE409EFFE5EB46"
+               BuildableName = "CheckoutFeature.framework"
+               BlueprintName = "CheckoutFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3747C2D3253A533273B8A017"
+               BuildableName = "CourierApp.app"
+               BlueprintName = "CourierApp"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "61B6C2AA48E2BCB9FEB1A4FC"
+               BuildableName = "CourierAppTests.xctest"
+               BlueprintName = "CourierAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "37AC86BD454836A3B68BB078"
+               BuildableName = "DesignSystem.framework"
+               BlueprintName = "DesignSystem"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E59B264CC8DCBB038577C22B"
+               BuildableName = "ExperimentationKit.framework"
+               BlueprintName = "ExperimentationKit"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "809DD540BB66D7465958DE6C"
+               BuildableName = "InventoryFeature.framework"
+               BlueprintName = "InventoryFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B3B395FD6136F57D630138BD"
+               BuildableName = "Kingfisher.framework"
+               BlueprintName = "Kingfisher"
+               ReferencedContainer = "container:Tuist/.build/tuist-derived/Kingfisher/Kingfisher.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F6E2F8C3B7D9EB13105F5694"
+               BuildableName = "Kingfisher_Kingfisher.bundle"
+               BlueprintName = "Kingfisher_Kingfisher"
+               ReferencedContainer = "container:Tuist/.build/tuist-derived/Kingfisher/Kingfisher.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8BCF0AD9384C53D05110D84E"
+               BuildableName = "MapsFeature.framework"
+               BlueprintName = "MapsFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4DF2AA2BB6AF0631489C87FD"
+               BuildableName = "NetworkingKit.framework"
+               BlueprintName = "NetworkingKit"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E71FF67D3A022EEFF409839C"
+               BuildableName = "NotificationsFeature.framework"
+               BlueprintName = "NotificationsFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A6A6B06B3CBE98C9543AB69F"
+               BuildableName = "OpsConsoleApp.app"
+               BlueprintName = "OpsConsoleApp"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8A436D8418563D2090ECBD65"
+               BuildableName = "OpsConsoleAppTests.xctest"
+               BlueprintName = "OpsConsoleAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CDA97D3D2EB951E3C584F6D9"
+               BuildableName = "OrdersFeature.framework"
+               BlueprintName = "OrdersFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "2D8E6997D8977A6B4506C417"
+               BuildableName = "PaymentsFeature.framework"
+               BlueprintName = "PaymentsFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A8F328A094608E355F66C422"
+               BuildableName = "PreviewApp.app"
+               BlueprintName = "PreviewApp"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FB374407BF997E5FC87FCC3E"
+               BuildableName = "PreviewAppTests.xctest"
+               BlueprintName = "PreviewAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "19F888907800609524AB2C46"
+               BuildableName = "ProfileFeature.framework"
+               BlueprintName = "ProfileFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AE3F213AEEBE057D030FCCE6"
+               BuildableName = "SearchFeature.framework"
+               BlueprintName = "SearchFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4DEEEE214112F93162FCE906"
+               BuildableName = "SharedMocks.framework"
+               BlueprintName = "SharedMocks"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5124816A58283EB19D180C92"
+               BuildableName = "ShopperApp.app"
+               BlueprintName = "ShopperApp"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "66E8F1D67A82D8142A5D9094"
+               BuildableName = "ShopperAppTests.xctest"
+               BlueprintName = "ShopperAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8A043024BB190898066F1729"
+               BuildableName = "SnapKit.framework"
+               BlueprintName = "SnapKit"
+               ReferencedContainer = "container:Tuist/.build/tuist-derived/SnapKit/SnapKit.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6373C89B0415733128F88C67"
+               BuildableName = "SnapKit_SnapKit.bundle"
+               BlueprintName = "SnapKit_SnapKit"
+               ReferencedContainer = "container:Tuist/.build/tuist-derived/SnapKit/SnapKit.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "50E674F22FD55BE3D1803E4E"
+               BuildableName = "SupportFeature.framework"
+               BlueprintName = "SupportFeature"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D50047ADA6CCED4D177E834F"
+               BuildableName = "BackofficeAppTests.xctest"
+               BlueprintName = "BackofficeAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "61B6C2AA48E2BCB9FEB1A4FC"
+               BuildableName = "CourierAppTests.xctest"
+               BlueprintName = "CourierAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8A436D8418563D2090ECBD65"
+               BuildableName = "OpsConsoleAppTests.xctest"
+               BlueprintName = "OpsConsoleAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FB374407BF997E5FC87FCC3E"
+               BuildableName = "PreviewAppTests.xctest"
+               BlueprintName = "PreviewAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "66E8F1D67A82D8142A5D9094"
+               BuildableName = "ShopperAppTests.xctest"
+               BlueprintName = "ShopperAppTests"
+               ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "79EF9A1DA37031F21524FE92"
+            BuildableName = "AnalyticsKit.framework"
+            BlueprintName = "AnalyticsKit"
+            ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "79EF9A1DA37031F21524FE92"
+            BuildableName = "AnalyticsKit.framework"
+            BlueprintName = "AnalyticsKit"
+            ReferencedContainer = "container:SidekickMegaWorkspace.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>
