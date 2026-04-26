@@ -2,6 +2,40 @@ import ArgumentParser
 import Foundation
 
 extension Sidekick {
+  struct Init: ParsableCommand {
+    static let configuration = CommandConfiguration(
+      commandName: "init",
+      abstract: "Initialize sidekick defaults for this project"
+    )
+
+    @Option(name: .customLong("path"), help: "Project root to scan (defaults to current directory)")
+    var path: String?
+
+    @Flag(name: .customLong("non-interactive"), help: "Use first detected options without prompts")
+    var nonInteractive: Bool = false
+
+    @Flag(
+      name: .customLong("allow-provisioning-updates"),
+      help: "Allow Xcode to update provisioning profiles automatically"
+    )
+    var allowProvisioningUpdates: Bool = false
+
+    @Option(
+      name: .customLong("archive-output"),
+      help: "Default archive directory or .xcarchive path"
+    )
+    var archiveOutput: String?
+
+    func run() throws {
+      try runInitFlow(
+        root: URL(fileURLWithPath: path ?? FileManager.default.currentDirectoryPath),
+        nonInteractive: nonInteractive,
+        allowProvisioningUpdates: allowProvisioningUpdates,
+        archiveOutput: archiveOutput
+      )
+    }
+  }
+
   struct Configure: ParsableCommand {
     static let configuration = CommandConfiguration(
       commandName: "configure",
@@ -47,29 +81,41 @@ extension Sidekick {
       }
 
       guard initialize else {
-        print("❌ Missing action. Use 'sidekick configure --init' for setup or 'sidekick configure --set <name>'.")
+        print("❌ Missing action. Use 'sidekick init' for setup or 'sidekick configure --set <name>'.")
         throw ExitCode(1)
       }
 
-      try runInit(root: root)
-    }
-
-    private func runInit(root: URL) throws {
-      let existingConfig = loadConfigIfAvailable(root: root)
-      let config = try buildSidekickConfig(
+      try runInitFlow(
         root: root,
-        existingConfig: existingConfig,
         nonInteractive: nonInteractive,
         allowProvisioningUpdates: allowProvisioningUpdates,
-        archiveOutput: archiveOutput,
-        selectedConfig: nil
+        archiveOutput: archiveOutput
       )
+    }
+  }
+}
 
-      let defaultName = "default"
-      try saveNamedConfig(config, name: defaultName, root: root)
-      try setDefaultConfig(name: defaultName, root: root)
+private func runInitFlow(
+  root: URL,
+  nonInteractive: Bool,
+  allowProvisioningUpdates: Bool,
+  archiveOutput: String?
+) throws {
+  let existingConfig = loadConfigIfAvailable(root: root)
+  let config = try buildSidekickConfig(
+    root: root,
+    existingConfig: existingConfig,
+    nonInteractive: nonInteractive,
+    allowProvisioningUpdates: allowProvisioningUpdates,
+    archiveOutput: archiveOutput,
+    selectedConfig: nil
+  )
 
-      print("""
+  let defaultName = "default"
+  try saveNamedConfig(config, name: defaultName, root: root)
+  try setDefaultConfig(name: defaultName, root: root)
+
+  print("""
 Saved sidekick config:
   Name: \(defaultName)
   Workspace: \(config.workspace ?? "-")
@@ -85,8 +131,6 @@ Saved sidekick config:
   Config path: \(namedConfigPath(name: defaultName, root: root).path)
   Default path: \(configFilePath(root: root).path)
 """)
-    }
-  }
 }
 
 func formatDefault(name: String?, id: String?) -> String {
