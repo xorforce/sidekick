@@ -41,6 +41,7 @@ struct InteractiveSelection {
     var filteredOptions = options
     var selectedIndex = 0
     var isFirstRender = true
+    var lastRenderLineCount = 0
 
     func updateFilteredOptions(resetSelection: Bool) {
       filteredOptions = filteredList(from: options, matching: query)
@@ -55,7 +56,7 @@ struct InteractiveSelection {
 
     func render() {
       if !isFirstRender {
-        terminal.clearLines(count: renderedLineCount(for: filteredOptions.count, allowSkip: allowSkip))
+        terminal.clearLines(count: lastRenderLineCount)
       } else {
         isFirstRender = false
       }
@@ -65,9 +66,11 @@ struct InteractiveSelection {
       print("Filter: \(query.isEmpty ? "-" : query)")
       print()
 
-      renderSkipRow(selectedIndex: selectedIndex, allowSkip: allowSkip)
-      renderVisibleOptions(filteredOptions, selectedIndex: selectedIndex, query: query)
-      renderFilterSummary(options: options, filteredOptions: filteredOptions, query: query)
+      var lineCount = 4
+      lineCount += renderSkipRow(selectedIndex: selectedIndex, allowSkip: allowSkip)
+      lineCount += renderVisibleOptions(filteredOptions, selectedIndex: selectedIndex, query: query)
+      lineCount += renderFilterSummary(options: options, filteredOptions: filteredOptions, query: query)
+      lastRenderLineCount = lineCount
     }
 
     updateFilteredOptions(resetSelection: true)
@@ -94,7 +97,7 @@ struct InteractiveSelection {
         render()
 
       case .enter:
-        terminal.clearLines(count: renderedLineCount(for: filteredOptions.count, allowSkip: allowSkip))
+        terminal.clearLines(count: lastRenderLineCount)
         if allowSkip && selectedIndex == -1 {
           print("\(prompt): Skipped")
           print()
@@ -137,24 +140,20 @@ struct InteractiveSelection {
     }
   }
 
-  private static func renderedLineCount(for optionCount: Int, allowSkip: Bool) -> Int {
-    let visibleOptions = min(optionCount, maxVisibleOptions)
-    return visibleOptions + (allowSkip ? 1 : 0) + 5
-  }
-
-  private static func renderSkipRow(selectedIndex: Int, allowSkip: Bool) {
-    guard allowSkip else { return }
+  private static func renderSkipRow(selectedIndex: Int, allowSkip: Bool) -> Int {
+    guard allowSkip else { return 0 }
     if selectedIndex == -1 {
       print("\(ANSICodes.brightCyan)\(ANSICodes.bold)→ [Skip]\(ANSICodes.reset)")
-      return
+      return 1
     }
     print("  [Skip]")
+    return 1
   }
 
-  private static func renderVisibleOptions(_ options: [String], selectedIndex: Int, query: String) {
+  private static func renderVisibleOptions(_ options: [String], selectedIndex: Int, query: String) -> Int {
     guard !options.isEmpty else {
       print("  No matches for \"\(query)\"")
-      return
+      return 1
     }
 
     let window = visibleWindow(selectedIndex: selectedIndex, optionCount: options.count)
@@ -164,14 +163,16 @@ struct InteractiveSelection {
       let suffix = index == selectedIndex ? ANSICodes.reset : ""
       print("\(prefix) [\(index + 1)] \(options[index])\(suffix)")
     }
+    return window.count
   }
 
-  private static func renderFilterSummary(options: [String], filteredOptions: [String], query: String) {
-    guard options.count > maxVisibleOptions || !query.isEmpty else { return }
+  private static func renderFilterSummary(options: [String], filteredOptions: [String], query: String) -> Int {
+    guard options.count > maxVisibleOptions || !query.isEmpty else { return 0 }
     let count = filteredOptions.count
     let label = query.isEmpty ? "Showing first \(min(count, maxVisibleOptions)) of \(count)" : "\(count) match\(count == 1 ? "" : "es")"
     print()
     print(label)
+    return 2
   }
 
   private static func visibleWindow(selectedIndex: Int, optionCount: Int) -> Range<Int> {
