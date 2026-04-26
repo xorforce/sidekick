@@ -4,7 +4,8 @@ import Foundation
 extension Sidekick {
   struct Setup: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Run the one-time setup job for this project"
+      abstract: "Run the one-time setup job for this project",
+      shouldDisplay: false
     )
 
     @Option(name: .customLong("path"), help: "Project root containing .sidekick/config.json")

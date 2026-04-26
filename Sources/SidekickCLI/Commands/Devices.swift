@@ -4,7 +4,8 @@ import Foundation
 extension Sidekick {
   struct Devices: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "List physical devices known to Xcode"
+      abstract: "List physical devices known to Xcode",
+      shouldDisplay: false
     )
 
     func run() throws {

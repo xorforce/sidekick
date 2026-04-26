@@ -4,7 +4,8 @@ import Foundation
 extension Sidekick {
   struct Run: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Build, install, and launch the app on device or simulator"
+      abstract: "Build, install, and launch the app on device or simulator",
+      shouldDisplay: false
     )
 
     @Option(name: .customLong("path"), help: "Path to project directory")

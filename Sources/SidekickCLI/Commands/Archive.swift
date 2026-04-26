@@ -4,7 +4,8 @@ import Foundation
 extension Sidekick {
   struct Archive: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Archive the app for device or macOS"
+      abstract: "Archive the app for device or macOS",
+      shouldDisplay: false
     )
 
     @Option(name: .customLong("path"), help: "Path to project directory")

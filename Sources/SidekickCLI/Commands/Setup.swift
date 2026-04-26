@@ -5,7 +5,8 @@ extension Sidekick {
   struct Configure: ParsableCommand {
     static let configuration = CommandConfiguration(
       commandName: "configure",
-      abstract: "Configure sidekick defaults for this project"
+      abstract: "Configure sidekick defaults for this project",
+      shouldDisplay: false
     )
 
     @Option(name: .customLong("path"), help: "Project root to scan (defaults to current directory)")

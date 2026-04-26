@@ -4,7 +4,8 @@ import Foundation
 extension Sidekick {
   struct Test: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Run tests for simulator, device, or macOS"
+      abstract: "Run tests for simulator, device, or macOS",
+      shouldDisplay: false
     )
 
     @Option(name: .customLong("path"), help: "Path to project directory")

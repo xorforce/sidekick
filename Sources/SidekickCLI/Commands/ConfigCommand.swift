@@ -6,6 +6,7 @@ extension Sidekick {
     static let configuration = CommandConfiguration(
       commandName: "config",
       abstract: "Manage sidekick config profiles",
+      shouldDisplay: false,
       subcommands: [Add.self, Edit.self]
     )
   }
@@ -14,7 +15,8 @@ extension Sidekick {
 extension Sidekick.Config {
   struct Add: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Add a new config profile"
+      abstract: "Add a new config profile",
+      shouldDisplay: false
     )
 
     @Argument(help: "Name for the config profile")
@@ -69,7 +71,8 @@ extension Sidekick.Config {
 
   struct Edit: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "Edit an existing config profile"
+      abstract: "Edit an existing config profile",
+      shouldDisplay: false
     )
 
     @Argument(help: "Name of the config profile to edit")

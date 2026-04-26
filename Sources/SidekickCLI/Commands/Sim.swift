@@ -4,7 +4,8 @@ import Foundation
 extension Sidekick {
   struct Sim: ParsableCommand {
     static let configuration = CommandConfiguration(
-      abstract: "List available simulators"
+      abstract: "List available simulators",
+      shouldDisplay: false
     )
 
     func run() throws {
